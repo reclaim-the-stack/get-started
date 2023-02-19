@@ -1,0 +1,69 @@
+# Tells argocd to automatically sync all resources in the argocd-applications directory
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  description: Resources required for the platform.
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  destinations:
+    - namespace: "*"
+      server: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  sourceRepos:
+    - "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: argocd-applications
+    repoURL: https://github.com/dbackeus/activedeployment.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
+      selfHeal: false
+
+# apiVersion: argoproj.io/v1alpha1
+# kind: ApplicationSet
+# metadata:
+#   name: platform
+#   namespace: argocd
+# spec:
+#   generators:
+#     - git:
+#         repoURL: https://github.com/dbackeus/activedeployment.git
+#         revision: HEAD
+#         directories:
+#           - path: platform/*
+#   template:
+#     metadata:
+#       name: "{{path.basename}}"
+#     spec:
+#       project: platform
+#       syncPolicy:
+#         automated:
+#           allowEmpty: true
+#           prune: true
+#           selfHeal: false
+#       source:
+#         repoURL: https://github.com/dbackeus/activedeployment.git
+#         targetRevision: HEAD
+#         path: "{{path}}"
+#       destination:
+#         server: https://kubernetes.default.svc
