@@ -38,32 +38,51 @@ spec:
       allowEmpty: true
       prune: true
       selfHeal: false
-
-# apiVersion: argoproj.io/v1alpha1
-# kind: ApplicationSet
-# metadata:
-#   name: platform
-#   namespace: argocd
-# spec:
-#   generators:
-#     - git:
-#         repoURL: https://github.com/dbackeus/activedeployment.git
-#         revision: HEAD
-#         directories:
-#           - path: platform/*
-#   template:
-#     metadata:
-#       name: "{{path.basename}}"
-#     spec:
-#       project: platform
-#       syncPolicy:
-#         automated:
-#           allowEmpty: true
-#           prune: true
-#           selfHeal: false
-#       source:
-#         repoURL: https://github.com/dbackeus/activedeployment.git
-#         targetRevision: HEAD
-#         path: "{{path}}"
-#       destination:
-#         server: https://kubernetes.default.svc
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  description: Applications running on top of the platform.
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  destinations:
+    - namespace: "*"
+      server: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  sourceRepos:
+    - "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/dbackeus/activedeployment
+        revision: HEAD
+        directories:
+          - path: applications/*
+  template:
+    metadata:
+      name: "{{path.basename}}"
+    spec:
+      project: applications
+      syncPolicy:
+        automated:
+          allowEmpty: true
+          prune: true
+      source:
+        repoURL: https://github.com/dbackeus/activedeployment
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
