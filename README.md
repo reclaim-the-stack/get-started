@@ -54,7 +54,7 @@ There is no command to unset the context added by `talosctl` so this one you hav
 
 ## Installation
 
-The following assumes you have forked and cloned this repository and changed current working directory into the git repository.
+The following assumes you have cloned this repository and changed current working directory into the git repository.
 
 First we install ArgoCD
 ```
