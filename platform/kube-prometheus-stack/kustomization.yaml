@@ -90,6 +90,7 @@ helmCharts:
                 targetLabel: instance
                 regex: "([^:]+)(:[0-9]+)?"
                 replacement: "${1}"
+                action: replace
 
       prometheus:
         prometheusSpec:
