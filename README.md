@@ -28,7 +28,7 @@ talosctl cluster create \
 
 When your cluster is up and running you can configure `kubectl` and `talosctl` to use it by:
 
-````
+```
 kubectl config set-context admin@reclaim-the-stack
 talosctl config context reclaim-the-stack
 talosctl config node $(kubectl get node reclaim-the-stack-controlplane-1 -o yaml | yq .status.addresses.0.address)
