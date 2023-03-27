@@ -32,7 +32,6 @@ spec:
   source:
     path: argocd-applications
     repoURL: https://github.com/dbackeus/activedeployment.git
-    targetRevision: HEAD
   syncPolicy:
     automated:
       allowEmpty: true
@@ -81,7 +80,6 @@ spec:
           prune: true
       source:
         repoURL: https://github.com/dbackeus/activedeployment
-        targetRevision: HEAD
         path: "{{path}}"
       destination:
         server: https://kubernetes.default.svc
