@@ -18,7 +18,3 @@ spec:
       prune: true
     syncOptions:
       - ServerSideApply=true
-  ignoreDifferences:
-    - kind: ValidatingWebhookConfiguration
-      jqPathExpressions:
-        - .webhooks[]?.clientConfig.caBundle
