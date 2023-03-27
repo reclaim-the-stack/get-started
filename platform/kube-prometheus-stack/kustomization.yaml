@@ -102,10 +102,10 @@ helmCharts:
           # externalUrl: "https://prometheus.example.com"
           # secrets:
           #   - etcd-certs
-          storageSpec:
-            volumeClaimTemplate:
-              spec:
-                accessModes: ["ReadWriteOnce"]
-                resources:
-                  requests:
-                    storage: 2Gi
+          # storageSpec:
+          #   volumeClaimTemplate:
+          #     spec:
+          #       accessModes: ["ReadWriteOnce"]
+          #       resources:
+          #         requests:
+          #           storage: 2Gi
