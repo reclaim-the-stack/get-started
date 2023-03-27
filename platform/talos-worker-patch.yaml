@@ -1,0 +1,14 @@
+machine:
+  kubelet:
+    # Rancher Local Path Provisioner needs a directory available at /opt/local-path-provisioner
+    extraMounts:
+      - destination: /opt/local-path-provisioner
+        options:
+          - rbind
+          - rshared
+          - rw
+        source: /opt/local-path-provisioner
+        type: bind
+  sysctls:
+    # Increase max_map_count required by eg. elasticsearch
+    vm.max_map_count: 262144
