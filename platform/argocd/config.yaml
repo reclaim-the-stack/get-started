@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # url: https://argocd.example.com
+  # dex.config: |
+  #   connectors:
+  #     - type: oidc
+  #       id: google
+  #       name: Google
+  #       config:
+  #         issuer: https://accounts.google.com
+  #         clientID: <id>.apps.googleusercontent.com
+  #         clientSecret: $argocd-custom-secret:oidc.google.clientSecret
+
+  # Avoid colliding with Kubernetes default selector app.kubernetes.io/instance:
+  # https://argo-cd.readthedocs.io/en/stable/faq/#why-is-my-app-out-of-sync-even-after-syncing
+  application.instanceLabelKey: argocd.argoproj.io/instance
+
+  # Must explicitly enable helm to support helmCharts property in kustomization.yaml
+  kustomize.buildOptions: --load-restrictor LoadRestrictionsNone --enable-helm
+
+  # Ignore differences for commonly troublesome webhooks properties
+  resource.customizations.ignoreDifferences.admissionregistration.k8s.io_ValidatingWebhookConfiguration:
+    |
+    jqPathExpressions:
+      - ".webhooks[]?.clientConfig.caBundle"
+      - ".webhooks[]?.failurePolicy"
+  resource.customizations.ignoreDifferences.admissionregistration.k8s.io_MutatingWebhookConfiguration:
+    |
+    jqPathExpressions:
+      - ".webhooks[]?.clientConfig.caBundle"
+      - ".webhooks[]?.failurePolicy"
