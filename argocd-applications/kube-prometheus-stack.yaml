@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: kube-prometheus-stack
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   destination:
     server: https://kubernetes.default.svc

@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: elastic-cloud-on-kubernetes
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   destination:
     server: https://kubernetes.default.svc
