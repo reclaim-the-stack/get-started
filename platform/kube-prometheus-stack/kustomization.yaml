@@ -1,0 +1,112 @@
+resources:
+  - ./namespace.yaml
+helmCharts:
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    releaseName: monitoring
+    version: 45.7.1
+    namespace: monitoring
+    includeCRDs: true
+    valuesInline:
+      defaultRules:
+        disabled:
+          InfoInhibitor: true
+
+      # Requires a ton of config
+      alertmanager:
+        enabled: false
+
+      # Monitoring etcd requires setting up a certificate secret and passing it into prometheus
+      # kubeEtcd:
+      #   enabled: true
+      #   endpoints:
+      #     - 10.0.0.1
+      #     - 10.0.0.2
+      #     - 10.0.0.3
+      #   service:
+      #     port: 2379
+      #     targetPort: 2379
+      #   serviceMonitor:
+      #     scheme: https
+      #     insecureSkipVerify: false
+      #     caFile: /etc/prometheus/secrets/etcd-certs/etcd-client-ca.crt
+      #     certFile: /etc/prometheus/secrets/etcd-certs/etcd-client.crt
+      #     keyFile: /etc/prometheus/secrets/etcd-certs/etcd-client.key
+
+      # Unclear what these are necessary for
+      # kubeControllerManager:
+      #   service:
+      #     selector:
+      #       k8s-app: kube-controller-manager
+      # kubeScheduler:
+      #   service:
+      #     selector:
+      #       k8s-app: kube-scheduler
+
+      grafana:
+        defaultDashboardsTimezone: browser
+        adminPassword: changeme
+        # admin:
+        #   existingSecret: "<secret-name>"
+        #   userKey: admin-user
+        #   passwordKey: admin-password
+        # persistence:
+        #   enabled: true
+        #   size: 10Gi
+        #   accessModes: ["ReadWriteOnce"]
+        # grafana.ini:
+        #   server:
+        #     root_url: https://grafana.example.com
+        #   users:
+        #     auto_assign_org_role: Editor
+        #   auth.proxy:
+        #     enabled: true
+        #     header_name: cf-access-authenticated-user-email
+        #     header_property: email
+        #     auto_sign_up: true
+        #     enable_login_token: false
+        # additionalDataSources:
+        #   - name: Logging
+        #     uid: loki
+        #     type: loki
+        #     url: http://loki-gateway.logging.svc
+        #   - name: linkerd
+        #     uid: linkerd
+        #     type: prometheus
+        #     url: http://prometheus.linkerd-viz.svc:9090
+
+      prometheus-node-exporter:
+        prometheus:
+          monitor:
+            # Change to use hostname instead of ip as `instance`
+            relabelings:
+              - sourceLabels: [__meta_kubernetes_pod_node_name]
+                separator: ;
+                regex: ^(.*)$
+                targetLabel: instance
+                replacement: $1
+                action: replace
+              - sourceLabels: [nodename]
+                targetLabel: instance
+                regex: "([^:]+)(:[0-9]+)?"
+                replacement: "${1}"
+
+      prometheus:
+        prometheusSpec:
+          # Ensure all PodMonitor / ServiceMonitor resources are picked up properly:
+          # https://stackoverflow.com/questions/68085831/add-podmonitor-or-servicemonitor-outside-of-kube-prometheus-stack-helm-values
+          podMonitorSelectorNilUsesHelmValues: false
+          probeSelectorNilUsesHelmValues: false
+          ruleSelectorNilUsesHelmValues: false
+          serviceMonitorSelectorNilUsesHelmValues: false
+          # externalUrl: "https://prometheus.example.com"
+          # secrets:
+          #   - etcd-certs
+          # storageSpec:
+          #   volumeClaimTemplate:
+          #     spec:
+          #       storageClassName: openebs-hostpath
+          #       accessModes: ["ReadWriteOnce"]
+          #       resources:
+          #         requests:
+          #           storage: 50Gi
