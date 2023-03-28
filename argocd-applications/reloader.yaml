@@ -4,7 +4,7 @@ metadata:
   name: reloader
   namespace: argocd
 spec:
-  project: default
+  project: platform
   source:
     chart: reloader
     repoURL: https://stakater.github.io/stakater-charts
@@ -13,5 +13,7 @@ spec:
     server: "https://kubernetes.default.svc"
     namespace: reloader
   syncPolicy:
+    automated:
+      prune: true
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
