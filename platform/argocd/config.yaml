@@ -35,3 +35,8 @@ data:
     jqPathExpressions:
       - ".webhooks[]?.clientConfig.caBundle"
       - ".webhooks[]?.failurePolicy"
+
+  # Ignores a dynamically applied Kubernetes feature for Loki: https://github.com/grafana/loki/issues/7249
+  resource.customizations.ignoreDifferences.apps_StatefulSet: |
+    jsonPointers:
+      - /spec/persistentVolumeClaimRetentionPolicy

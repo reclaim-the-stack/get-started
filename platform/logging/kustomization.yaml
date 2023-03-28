@@ -1,0 +1,160 @@
+resources:
+  - ./namespace.yaml
+namespace: logging
+helmCharts:
+  - name: loki
+    repo: https://grafana.github.io/helm-charts
+    version: 4.8.0
+    namespace: logging
+    valuesInline:
+      monitoring:
+        dashboards:
+          labels:
+            grafana_dashboard: "1"
+        # Disable selfMonitoring since we don't use the Grafana Agent Operator
+        selfMonitoring:
+          enabled: false
+          grafanaAgent:
+            installOperator: false
+          lokiCanary:
+            enabled: false
+      # Test must be disabled if selfMonitoring is disabled:
+      # https://github.com/grafana/loki/issues/7625
+      test:
+        enabled: false
+      # loki:
+      #   auth_enabled: false
+      #   storage:
+      #     type: s3
+      #     bucketNames:
+      #       chunks: devops-kubernetes-loki-staging
+      #       ruler: devops-kubernetes-loki-staging
+      #       admin: devops-kubernetes-loki-staging
+      #     s3:
+      #       region: eu-north-1
+      gateway:
+        replicas: 1
+      write:
+        replicas: 1
+      #   extraEnv:
+      #     - name: AWS_ACCESS_KEY_ID
+      #       valueFrom:
+      #         secretKeyRef:
+      #           name: loki-s3
+      #           key: AWS_ACCESS_KEY_ID
+      #     - name: AWS_SECRET_ACCESS_KEY
+      #       valueFrom:
+      #         secretKeyRef:
+      #           name: loki-s3
+      #           key: AWS_SECRET_ACCESS_KEY
+      read:
+        replicas: 1
+      #   extraEnv:
+      #     - name: AWS_ACCESS_KEY_ID
+      #       valueFrom:
+      #         secretKeyRef:
+      #           name: loki-s3
+      #           key: AWS_ACCESS_KEY_ID
+      #     - name: AWS_SECRET_ACCESS_KEY
+      #       valueFrom:
+      #         secretKeyRef:
+      #           name: loki-s3
+      #           key: AWS_SECRET_ACCESS_KEY
+
+  # Kubernetes logs
+  - name: promtail
+    repo: https://grafana.github.io/helm-charts
+    version: 6.9.3
+    namespace: logging
+    valuesInline:
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+
+  # Host OS logs
+  # - name: vector
+  #   repo: https://helm.vector.dev
+  #   releaseName: vector
+  #   version: 0.20.1
+  #   namespace: logging
+  #   valuesInline:
+  #     role: "Agent"
+  #     podHostNetwork: true
+  #     dnsPolicy: ClusterFirstWithHostNet
+  #     service:
+  #       enabled: false
+  #     env:
+  #       - name: HOST_IP
+  #         valueFrom:
+  #           fieldRef:
+  #             apiVersion: v1
+  #             fieldPath: status.hostIP
+  #     tolerations:
+  #       - effect: NoSchedule
+  #         operator: Exists
+  #       - effect: NoExecute
+  #         operator: Exists
+  #     customConfig:
+  #       sources:
+  #         talos_kernel_logs:
+  #           address: 127.0.0.1:6050
+  #           type: socket
+  #           mode: tcp
+  #           max_length: 102400
+  #           decoding:
+  #             codec: json
+  #         talos_service_logs:
+  #           address: 127.0.0.1:6051
+  #           type: socket
+  #           mode: tcp
+  #           max_length: 102400
+  #           decoding:
+  #             codec: json
+  #       transforms:
+  #         talos_kernel_logs_transformed:
+  #           inputs:
+  #             - talos_kernel_logs
+  #           type: "remap"
+  #           source: |
+  #             .hostip = "${HOST_IP}"
+  #             .hostname = "${VECTOR_SELF_NODE_NAME}"
+  #         talos_service_logs_transformed:
+  #           inputs:
+  #             - talos_service_logs
+  #           type: "remap"
+  #           source: |
+  #             .hostip = "${HOST_IP}"
+  #             .hostname = "${VECTOR_SELF_NODE_NAME}"
+  #       sinks:
+  #         talos_kernel:
+  #           type: loki
+  #           inputs:
+  #             - talos_kernel_logs_transformed
+  #           endpoint: http://loki-gateway.logging.svc
+  #           encoding:
+  #             codec: json
+  #           batch:
+  #             max_bytes: 1048576
+  #           out_of_order_action: accept
+  #           labels:
+  #             talos_host: |-
+  #               {{`{{ hostname }}`}}
+  #             talos_facility: |-
+  #               {{`{{ facility }}`}}
+  #         talos_service:
+  #           type: loki
+  #           inputs:
+  #             - talos_service_logs_transformed
+  #           endpoint: http://loki-gateway.logging.svc
+  #           encoding:
+  #             codec: json
+  #           batch:
+  #             max_bytes: 400000
+  #           out_of_order_action: accept
+  #           labels:
+  #             talos_host: |-
+  #               {{`{{ hostname }}`}}
+  #             talos_service: |-
+  #               {{`{{ "talos-service" }}`}}
