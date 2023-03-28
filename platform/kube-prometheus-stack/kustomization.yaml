@@ -65,11 +65,11 @@ helmCharts:
         #     header_property: email
         #     auto_sign_up: true
         #     enable_login_token: false
-        # additionalDataSources:
-        #   - name: Logging
-        #     uid: loki
-        #     type: loki
-        #     url: http://loki-gateway.logging.svc
+        additionalDataSources:
+          - name: Logging
+            uid: loki
+            type: loki
+            url: http://loki-gateway.logging.svc
         #   - name: linkerd
         #     uid: linkerd
         #     type: prometheus
