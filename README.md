@@ -78,3 +78,25 @@ You can now apply our `argocd-root` manifest to get the platform installed via A
 ```
 kubectl create -f argocd-root.yaml
 ```
+
+### Cloudflared Ingress Configuration
+
+The following assumes that you have admin access to a domain managed by [Cloudflare](https://cloudflare.com).
+
+Create the Cloudflare tunnel:
+
+```
+cloudflared tunnel login
+cloudflared tunnel --credentials-file tunnel-credentials.json create reclaim-the-stack
+kubectl create secret generic tunnel-credentials --dry-run=client \
+  --from-file=credentials.json=tunnel-credentials.json \
+  -o yaml | kubeseal -o yaml > platform/cloudflared/templates/tunnel-credentials.yaml
+
+echo "Check out your tunnel at https://one.dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json)/access/tunnels" &&
+echo "Add DNS entries at https://dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json)" &&
+echo "Configure DNS entries with CNAME target $(yq .TunnelID tunnel-credentials.json).cfargotunnel.com"
+```
+
+For DNS entries you either have to manually configure a subdomain entry for each ingress entry you want to expose with or use a wildcard entry. Wildcard entry is strongly recommended as it significantly simplifies configuration, eg: `*.example.com` -> ´<tunnel-id>.cfargotunnel.com`. If you have [Total TLS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/total-tls/) enabled on your Cloudflare domain you also have the option to put the ingress on a subdomain wildcard, eg. `*.reclaim-the-stack.example.com` -> `<tunnel-id>.cfargotunnel.com`.
+
+Open `platform/cloudflared/config.yaml` and search + replace `example.com` with your own Cloudflare domain.

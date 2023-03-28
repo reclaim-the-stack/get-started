@@ -1,0 +1,16 @@
+# Exposes the cloudflared metrics endpoint for Prometheus ingestion
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflared
+  labels:
+    app: cloudflared
+spec:
+  ports:
+    - name: http
+      port: 2000
+      protocol: TCP
+      targetPort: 2000
+  selector:
+    app: cloudflared
+  type: ClusterIP
