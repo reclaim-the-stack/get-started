@@ -17,6 +17,22 @@ data:
   #         clientID: <id>.apps.googleusercontent.com
   #         clientSecret: $argocd-custom-secret:oidc.google.clientSecret
 
+  # Enable health check for Application resources to make sync-wave work properly:
+  # https://kubito.dev/posts/enable-argocd-sync-wave-between-apps/
+  resource.customizations.health.argoproj.io_Application: |
+    hs = {}
+    hs.status = "Progressing"
+    hs.message = ""
+    if obj.status ~= nil then
+      if obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+    end
+    return hs
+
   # Avoid colliding with Kubernetes default selector app.kubernetes.io/instance:
   # https://argo-cd.readthedocs.io/en/stable/faq/#why-is-my-app-out-of-sync-even-after-syncing
   application.instanceLabelKey: argocd.argoproj.io/instance
