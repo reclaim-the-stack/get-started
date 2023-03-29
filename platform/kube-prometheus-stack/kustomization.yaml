@@ -69,7 +69,7 @@ helmCharts:
           - name: Logging
             uid: loki
             type: loki
-            url: http://loki-gateway.logging.svc
+            url: http://qryn.logging.svc:3100
         #   - name: linkerd
         #     uid: linkerd
         #     type: prometheus

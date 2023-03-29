@@ -1,0 +1,52 @@
+apiVersion: clickhouse.altinity.com/v1
+kind: ClickHouseInstallation
+metadata:
+  name: qryn
+  namespace: logging
+spec:
+  defaults:
+    templates:
+      dataVolumeClaimTemplate: data-volume-template
+      logVolumeClaimTemplate: log-volume-template
+      serviceTemplate: chi-service-template
+  configuration:
+    users:
+      qryn/password: qryn
+      qryn/networks/ip: 0.0.0.0
+      qryn/networks/host_regexp: .*
+    clusters:
+      - name: qryn
+        secret:
+          auto: "true"
+        layout:
+          shardsCount: 1
+          replicasCount: 1
+  templates:
+    serviceTemplates:
+      - name: chi-service-template
+        generateName: clickhouse-{chi}
+        spec:
+          type: ClusterIP
+          ClusterIP: None
+          ports:
+            - name: http
+              port: 8123
+            - name: tcp
+              port: 9000
+            - name: interserver
+              port: 9009
+    volumeClaimTemplates:
+      - name: data-volume-template
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+      - name: log-volume-template
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 100Mi

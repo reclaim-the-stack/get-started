@@ -1,70 +1,14 @@
 resources:
   - ./namespace.yaml
+  - ./clickhouse.yaml
+  - ./qryn.yaml
 namespace: logging
 helmCharts:
-  - name: loki
-    repo: https://grafana.github.io/helm-charts
-    version: 4.8.0
-    namespace: logging
-    valuesInline:
-      monitoring:
-        dashboards:
-          labels:
-            grafana_dashboard: "1"
-        # Disable selfMonitoring since we don't use the Grafana Agent Operator
-        selfMonitoring:
-          enabled: false
-          grafanaAgent:
-            installOperator: false
-          lokiCanary:
-            enabled: false
-      # Test must be disabled if selfMonitoring is disabled:
-      # https://github.com/grafana/loki/issues/7625
-      test:
-        enabled: false
-      # loki:
-      #   auth_enabled: false
-      #   storage:
-      #     type: s3
-      #     bucketNames:
-      #       chunks: devops-kubernetes-loki-staging
-      #       ruler: devops-kubernetes-loki-staging
-      #       admin: devops-kubernetes-loki-staging
-      #     s3:
-      #       region: eu-north-1
-      gateway:
-        replicas: 1
-      write:
-        replicas: 1
-      #   extraEnv:
-      #     - name: AWS_ACCESS_KEY_ID
-      #       valueFrom:
-      #         secretKeyRef:
-      #           name: loki-s3
-      #           key: AWS_ACCESS_KEY_ID
-      #     - name: AWS_SECRET_ACCESS_KEY
-      #       valueFrom:
-      #         secretKeyRef:
-      #           name: loki-s3
-      #           key: AWS_SECRET_ACCESS_KEY
-      read:
-        replicas: 1
-      #   extraEnv:
-      #     - name: AWS_ACCESS_KEY_ID
-      #       valueFrom:
-      #         secretKeyRef:
-      #           name: loki-s3
-      #           key: AWS_ACCESS_KEY_ID
-      #     - name: AWS_SECRET_ACCESS_KEY
-      #       valueFrom:
-      #         secretKeyRef:
-      #           name: loki-s3
-      #           key: AWS_SECRET_ACCESS_KEY
-
-  # Kubernetes logs
+  # Promtail captures logs from all Kubernetes pods and pushes them in batches to Qryn
   - name: promtail
     repo: https://grafana.github.io/helm-charts
     version: 6.9.3
+    releaseName: promtail # without this pods are named release-name
     namespace: logging
     valuesInline:
       tolerations:
@@ -72,6 +16,9 @@ helmCharts:
           operator: Exists
         - effect: NoExecute
           operator: Exists
+      config:
+        clients:
+          - url: http://qryn:3100/loki/api/v1/push
 
   # Host OS logs
   # - name: vector

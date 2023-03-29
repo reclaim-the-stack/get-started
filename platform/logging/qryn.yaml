@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qryn
+  namespace: logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qryn
+  template:
+    metadata:
+      labels:
+        app: qryn
+    spec:
+      containers:
+        - name: web
+          image: mynewsdesk/qryn:v2.3.1
+          ports:
+            - containerPort: 3100
+          resources:
+            requests:
+              memory: 100Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+          env:
+            - name: CLICKHOUSE_SERVER
+              value: clickhouse-qryn
+            - name: CLICKHOUSE_AUTH
+              value: qryn:qryn
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qryn
+  namespace: logging
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3100
+      targetPort: 3100
+      protocol: TCP
+  selector:
+    app: qryn
