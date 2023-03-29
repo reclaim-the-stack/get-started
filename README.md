@@ -1,4 +1,4 @@
-# activedeployment
+# Reclaim the Stack: Get Started
 
 ## Local Cluster
 
