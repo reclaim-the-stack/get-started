@@ -11,7 +11,7 @@ spec:
   project: platform
   source:
     path: platform/pgo
-    repoURL: https://github.com/dbackeus/activedeployment.git
+    repoURL: https://github.com/reclaim-the-stack/get-started.git
   syncPolicy:
     automated:
       allowEmpty: true

@@ -31,7 +31,7 @@ spec:
   project: default
   source:
     path: argocd-applications
-    repoURL: https://github.com/dbackeus/activedeployment.git
+    repoURL: https://github.com/reclaim-the-stack/get-started.git
   syncPolicy:
     automated:
       allowEmpty: true
@@ -65,7 +65,7 @@ metadata:
 spec:
   generators:
     - git:
-        repoURL: https://github.com/dbackeus/activedeployment
+        repoURL: https://github.com/reclaim-the-stack/get-started
         revision: HEAD
         directories:
           - path: applications/*
@@ -79,7 +79,7 @@ spec:
           allowEmpty: true
           prune: true
       source:
-        repoURL: https://github.com/dbackeus/activedeployment
+        repoURL: https://github.com/reclaim-the-stack/get-started
         path: "{{path}}"
       destination:
         server: https://kubernetes.default.svc
