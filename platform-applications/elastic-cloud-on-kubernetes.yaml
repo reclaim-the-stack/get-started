@@ -1,20 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: elastic-cloud-on-kubernetes
+  name: elastic-cloud-kubernetes-operator
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  destination:
-    server: https://kubernetes.default.svc
   project: platform
   source:
-    path: platform/elastic-cloud-on-kubernetes
-    repoURL: https://github.com/reclaim-the-stack/get-started.git
+    chart: eck-operator
+    repoURL: https://helm.elastic.co
+    targetRevision: 2.7.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: elastic-system
   syncPolicy:
     automated:
-      allowEmpty: true
       prune: true
     syncOptions:
       - ServerSideApply=true
+      - CreateNamespace=true
