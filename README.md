@@ -97,6 +97,8 @@ echo "Add DNS entries at https://dash.cloudflare.com/$(yq .AccountTag tunnel-cre
 echo "Configure DNS entries with CNAME target $(yq .TunnelID tunnel-credentials.json).cfargotunnel.com"
 ```
 
-For DNS entries you either have to manually configure a subdomain entry for each ingress entry you want to expose with or use a wildcard entry. Wildcard entry is strongly recommended as it significantly simplifies configuration, eg: `*.example.com` -> `<tunnel-id>.cfargotunnel.com`. If you have [Total TLS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/total-tls/) enabled on your Cloudflare domain you also have the option to put the ingress on a subdomain wildcard, eg. `*.reclaim-the-stack.example.com` -> `<tunnel-id>.cfargotunnel.com`.
+For DNS entries you either have to manually configure a subdomain entry for each ingress entry you want to expose with or use a wildcard entry. Wildcard entry is strongly recommended as it significantly simplifies configuration, eg: `*.example.com` -> `<tunnel-id>.cfargotunnel.com`.
+
+If you have [Total TLS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/total-tls/) enabled on your Cloudflare domain you also have the option to put the ingress on a subdomain wildcard, eg. `*.reclaim-the-stack.example.com` -> `<tunnel-id>.cfargotunnel.com`.
 
 Open `platform/cloudflared/config.yaml` and search + replace `example.com` with your own Cloudflare domain.
