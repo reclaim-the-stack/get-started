@@ -1,0 +1,18 @@
+# Disabled in favor of Rancher's Local Path Provisioner since OpenEBS requires
+# udev support which isn't supported out of the box on local talosctl clusters
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openebs-dynamic-localpv-provisioner
+  namespace: argocd
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: platform
+  source:
+    path: platform/openebs-dynamic-localpv-provisioner
+    repoURL: https://github.com/reclaim-the-stack/get-started.git
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true

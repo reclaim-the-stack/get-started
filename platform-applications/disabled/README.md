@@ -1,0 +1,1 @@
+Move manifests from here into the directory above and ArgoCD will apply them on the next refresh.

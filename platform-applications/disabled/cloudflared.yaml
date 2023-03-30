@@ -1,0 +1,19 @@
+# Enable this when you're ready to use Cloudflared as ingress
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudflared
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: platform
+  source:
+    path: platform/cloudflared
+    repoURL: https://github.com/reclaim-the-stack/get-started.git
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
