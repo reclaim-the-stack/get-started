@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spotahome-redis-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: platform
+  source:
+    path: platform/spotahome-redis-operator
+    repoURL: https://github.com/reclaim-the-stack/get-started.git
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
+    syncOptions:
+      - ServerSideApply=true
