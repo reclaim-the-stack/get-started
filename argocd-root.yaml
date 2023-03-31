@@ -1,4 +1,5 @@
-# Tells argocd to automatically sync all resources in the argocd-applications directory
+# Configures ArgoCD to automatically sync all resources in the platform-applications directory
+# as well as all sub-folders to the applications directory.
 
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -30,7 +31,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: argocd-applications
+    path: platform-applications
     repoURL: https://github.com/reclaim-the-stack/get-started.git
   syncPolicy:
     automated:
