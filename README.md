@@ -41,6 +41,13 @@ kubectl get nodes -o wide
 talosctl get members
 ```
 
+Before proceeding to the Installation section, ensure to label the worker node with both `worker` and `database` roles to allow scheduling all types of workloads on it (NOTE: on a real production cluster you might want to keep worker and database nodes separate):
+
+```
+kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/worker=
+kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/database=
+```
+
 ### Tear-down
 
 ```
@@ -110,3 +117,11 @@ If you have [Total TLS](https://developers.cloudflare.com/ssl/edge-certificates/
 Open `platform/cloudflared/config.yaml` and search + replace `example.com` with your own Cloudflare domain.
 
 After pushing the changes and refreshing the `platform` application in ArgoCD `cloudflared` will start deploying. When everything is green, provided you have set up your DNS entries correctly, you should now be able to access ArgoCD and Grafana via your domain on their respective subdomains.
+
+### ArgoCD webhook
+
+When you got ingress working and can reach ArgoCD via your domain you can add a webhook to this repository (via Settings -> Webhooks -> Add webhook) to allow ArgoCD to immediately sync changes after every git push.
+
+The URL structure of the webhook is: `https://argocd.<your-domain.com>/api/webhook`
+The content type should be `application/json`
+For events you need "just the `push` event".
