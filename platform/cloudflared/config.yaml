@@ -6,17 +6,14 @@ no-autoupdate: true
 # For more about ingress rules, see
 # https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/configuration/ingress
 ingress:
-  # Hello world service for debugging
-  - hostname: hello.example.com
-    service: hello_world
   - hostname: argocd.example.com
     service: https://argocd-server.argocd.svc
     originRequest:
       noTLSVerify: true
   - hostname: grafana.example.com
     service: http://monitoring-grafana.monitoring.svc
-  # Most applications you expose will look like:
+  # Applications:
   # - hostname: <application>.example.com
   #   service: http://<application>-web
-  # This rule matches any traffic which didn't match a previous rule and returns 404.
+  # This rule matches any traffic which didn't match a previous rule and returns 404:
   - service: http_status:404
