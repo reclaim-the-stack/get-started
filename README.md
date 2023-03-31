@@ -18,11 +18,11 @@ talosctl cluster create \
   --name reclaim-the-stack \
   --image ghcr.io/siderolabs/talos:v1.3.6 \
   --kubernetes-version 1.26.2 \
-  --workers 1 \
-  --cpus "3.0" \
-  --cpus-workers "3.0" \
-  --memory 4096 \
-  --memory-workers 4096 \
+  --workers 3 \
+  --cpus "2.0" \
+  --cpus-workers "2.0" \
+  --memory 2048 \
+  --memory-workers 2048 \
   --config-patch-worker @platform/talos-worker-patch.yaml
 ```
 
@@ -55,15 +55,15 @@ talosctl cluster destroy --name reclaim-the-stack
 kubectl config unset contexts.admin@reclaim-the-stack
 kubectl config unset users.admin@reclaim-the-stack
 kubectl config unset clusters.reclaim-the-stack
+yq eval -i 'del(.contexts."reclaim-the-stack")' ~/.talos/config
 ```
-
-There is no command to unset the context added by `talosctl` so this one you have to delete manually from your `~/.talos/config` file.
 
 ## Installation
 
 The following assumes you have cloned this repository and changed current working directory into the git repository.
 
-First we install ArgoCD
+First we install the gitops tool ArgoCD:
+
 ```
 kubectl create -k platform/argocd
 ```
