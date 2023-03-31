@@ -46,6 +46,10 @@ Before proceeding to the Installation section, ensure to label the worker node w
 ```
 kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/worker=
 kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/database=
+kubectl label nodes reclaim-the-stack-worker-2 node-role.kubernetes.io/worker=
+kubectl label nodes reclaim-the-stack-worker-2 node-role.kubernetes.io/database=
+kubectl label nodes reclaim-the-stack-worker-3 node-role.kubernetes.io/worker=
+kubectl label nodes reclaim-the-stack-worker-3 node-role.kubernetes.io/database=
 ```
 
 ### Tear-down
@@ -105,9 +109,10 @@ kubectl create secret generic tunnel-credentials --dry-run=client \
   --from-file=credentials.json=tunnel-credentials.json \
   -o yaml | kubeseal -o yaml > platform/cloudflared/templates/tunnel-credentials.yaml
 
-echo "Check out your tunnel at https://one.dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json)/access/tunnels" &&
-echo "Add DNS entries at https://dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json)" &&
-echo "Configure DNS entries with CNAME target $(yq .TunnelID tunnel-credentials.json).cfargotunnel.com"
+echo "" &&
+echo "Check out your tunnel at https://one.dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json -oy)/access/tunnels" &&
+echo "Add DNS entries at https://dash.cloudflare.com/$(yq .AccountTag tunnel-credentials.json -oy)" &&
+echo "Configure DNS entries with CNAME target $(yq .TunnelID tunnel-credentials.json -oy).cfargotunnel.com"
 ```
 
 For DNS entries you either have to manually configure a subdomain entry for each ingress entry you want to expose with or use a wildcard entry. Wildcard entry is strongly recommended as it significantly simplifies configuration, eg: `*.example.com` -> `<tunnel-id>.cfargotunnel.com`.
