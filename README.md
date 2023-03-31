@@ -83,6 +83,12 @@ kubectl create -f argocd-root.yaml
 
 The following assumes that you have admin access to a domain managed by [Cloudflare](https://cloudflare.com).
 
+Enable the `cloudflared` component of the stack:
+
+```
+mv platform-applications/disabled/cloudflared.yaml platform-applications/
+```
+
 Create the Cloudflare tunnel:
 
 ```
@@ -102,3 +108,5 @@ For DNS entries you either have to manually configure a subdomain entry for each
 If you have [Total TLS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/total-tls/) enabled on your Cloudflare domain you also have the option to put the ingress on a subdomain wildcard, eg. `*.reclaim-the-stack.example.com` -> `<tunnel-id>.cfargotunnel.com`.
 
 Open `platform/cloudflared/config.yaml` and search + replace `example.com` with your own Cloudflare domain.
+
+After pushing the changes and refreshing the `platform` application in ArgoCD `cloudflared` will start deploying. When everything is green, provided you have set up your DNS entries correctly, you should now be able to access ArgoCD and Grafana via your domain on their respective subdomains.
