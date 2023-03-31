@@ -8,21 +8,21 @@
 # resources:
 #   %{camelName}:
 #     replicas: 2
-#     memory: 4Gi
-#     cpu: 2
-#     disk: 20Gi
+#     memory: 1Gi
+#     cpu: 1
+#     disk: 10Gi
 #     # Tip: generate configuration based on CPU / RAM settings at https://pgtune.leopard.in.ua/
 #     config:
-#       max_connections: 100
-#       shared_buffers: 1GB
-#       effective_cache_size: 3GB
-#       maintenance_work_mem: 256MB
+#       max_connections: 40
+#       shared_buffers: 256MB
+#       effective_cache_size: 768MB
+#       maintenance_work_mem: 64MB
 #       checkpoint_completion_target: "0.9"
-#       wal_buffers: 16MB
+#       wal_buffers: 7864kB
 #       default_statistics_target: "100"
 #       random_page_cost: "1.1"
 #       effective_io_concurrency: "200"
-#       work_mem: 10485kB
+#       work_mem: 3276kB
 #       min_wal_size: 1GB
 #       max_wal_size: 4GB
 # env:
