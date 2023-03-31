@@ -9,6 +9,7 @@ metadata:
 spec:
   destination:
     server: https://kubernetes.default.svc
+    namespace: default
   project: platform
   source:
     path: platform/cloudflared
