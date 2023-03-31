@@ -1,0 +1,91 @@
+# Creates a Redis cluster via Spotahome's Redis Operator and a Service routing
+# to current master instance.
+#
+# If you don't care about HA you can set sentinels and replicas to 1. If you do
+# care about HA sentinels should be 3 and replicas 2 or more.
+#
+# Example values.yaml:
+# resources:
+#   redis:
+#     sentinels: 3
+#     replicas: 2
+#     memory: 100Mi
+#     cpu: 250m
+#     disk: 500Mi
+# env:
+#   - { name: REDIS_URL, value: "redis://%{application}%{suffix}-master.default.svc:6379" }
+#   # NOTE: Redis clients do not support SENTINEL_URL out of the box, you'll have to write your own
+#   # initialization logic. We recommend using it instead of REDIS_URL for 0 downtime failovers.
+#   - { name: SENTINEL_URL, value: "redis-sentinel://rfs-%{application}%{suffix}:26379/mymaster" }
+
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: {{ .Chart.Name }}%{suffix}
+spec:
+  sentinel:
+    replicas: {{ .Values.resources.%{camelName}.sentinels }}
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        memory: 100Mi
+    exporter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 50Mi
+        limits:
+          cpu: 200m
+          memory: 100Mi
+  redis:
+    replicas: {{ .Values.resources.%{camelName}.replicas }}
+    tolerations:
+      - key: role
+        value: database
+        effect: NoSchedule
+    nodeSelector:
+      node-role.kubernetes.io/database: ""
+    resources:
+      requests:
+        cpu: {{ .Values.resources.%{camelName}.cpu }}
+        memory: {{ .Values.resources.%{camelName}.memory }}
+      limits:
+        memory: {{ .Values.resources.%{camelName}.memory }}
+    exporter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 50Mi
+        limits:
+          cpu: 200m
+          memory: 100Mi
+    storage:
+      persistentVolumeClaim:
+        metadata:
+          name: {{ .Chart.Name }}%{suffix}
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .Values.resources.%{camelName}.disk }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}%{suffix}-master
+spec:
+  ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    app.kubernetes.io/name: {{ .Chart.Name }}%{suffix}
+    app.kubernetes.io/part-of: redis-failover
+    redisfailovers-role: master
+  type: ClusterIP

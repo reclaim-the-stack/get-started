@@ -1,0 +1,83 @@
+# Creates a Deployment and Service for a web application listening on .Values.%{name}.port.
+#
+# Liveness and readiness probes are commented out by default. You may want to make
+# an initial deploy without them and figure out which requests to use before enabling.
+#
+# Example values.yaml:
+# image: %{image}
+# deployments:
+#   %{camelName}:
+#     port: 3000
+#     replicas: 1
+#     memory: 512Mi
+#     cpu: 250m
+#     # Put ENV which should only apply to the web deployment here
+#     env:
+#       - name: WEB_CONCURRENCY
+#         value: "2"
+#     # command: <custom-command> (if you don't want to run bin/rails server)
+# envFrom:
+#   - secretRef:
+#       name: %{application} # Create a dedicated application secret with k secrets:create %{application}
+# env: [] # Put ENV which applies to all deployments here
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-%{name}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.%{camelName}.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-%{name}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-%{name}
+    spec:
+      containers:
+        - name: web
+          image: {{ .Values.image }}
+          command:
+            - sh
+            - -c
+            - {{ .Values.deployments.web.command | default "bin/rails server" }}
+          ports:
+            - containerPort: {{ .Values.deployments.%{camelName}.port }}
+          # readinessProbe:
+          #   httpGet:
+          #     path: /up
+          #     port: {{ .Values.deployments.%{name}.port }}
+          # livelinessProbe:
+          #   httpGet:
+          #     path: /up
+          #     port: {{ .Values.deployments.%{name}.port }}
+          resources:
+            limits:
+              memory: {{ .Values.deployments.%{camelName}.memory }}
+              cpu: {{ .Values.deployments.%{camelName}.cpu }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.%{camelName}.env }}
+            {{- .Values.deployments.%{camelName}.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ .Values.deployments.%{camelName}.port }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-%{name}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.deployments.%{name}.port }}
+      targetPort: {{ .Values.deployments.%{name}.port }}
+      protocol: TCP
+  selector:
+    app: {{ .Chart.Name }}-%{name}
