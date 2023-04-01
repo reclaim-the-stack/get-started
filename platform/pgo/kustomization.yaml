@@ -5,3 +5,4 @@ resources:
   # management via git tags so we have just locked it to the last commit SHA.
   - github.com/CrunchyData/postgres-operator-examples/kustomize/install/namespace?ref=f1766db0b50ad2ae8ff35a599a16e11eefbd9f9c
   - github.com/CrunchyData/postgres-operator-examples/kustomize/install/default?ref=f1766db0b50ad2ae8ff35a599a16e11eefbd9f9c
+  - ./podmonitor.yaml

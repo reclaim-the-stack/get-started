@@ -13,12 +13,14 @@ spec:
   podMetricsEndpoints:
     - port: exporter
       relabelings:
-        - sourceLabels: [__meta_kubernetes_namespace]
-          action: replace
+        - action: replace
+          sourceLabels: [__meta_kubernetes_namespace]
           targetLabel: kubernetes_namespace
-        - sourceLabels: [__meta_kubernetes_pod_name]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_name]
           targetLabel: pod
-        - sourceLabels:
+        - action: replace
+          sourceLabels:
             [
               __meta_kubernetes_pod_label_postgres_operator_crunchydata_com_cluster,
               __meta_kubernetes_pod_label_pg_cluster,
@@ -26,14 +28,17 @@ spec:
           targetLabel: cluster
           separator: ""
           replacement: "$1"
-        - sourceLabels: [__meta_kubernetes_namespace, cluster]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_namespace, cluster]
           targetLabel: pg_cluster
           separator: ":"
           replacement: "$1$2"
-        - sourceLabels: [__meta_kubernetes_pod_ip]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_ip]
           targetLabel: ip
           replacement: "$1"
-        - sourceLabels:
+        - action: replace
+          sourceLabels:
             [
               __meta_kubernetes_pod_label_postgres_operator_crunchydata_com_instance,
               __meta_kubernetes_pod_label_deployment_name,
@@ -41,7 +46,8 @@ spec:
           targetLabel: deployment
           replacement: "$1"
           separator: ""
-        - sourceLabels:
+        - action: replace
+          sourceLabels:
             [
               __meta_kubernetes_pod_label_postgres_operator_crunchydata_com_role,
               __meta_kubernetes_pod_label_role,
@@ -49,12 +55,15 @@ spec:
           targetLabel: role
           replacement: "$1"
           separator: ""
-        - sourceLabels: [dbname]
+        - action: replace
+          sourceLabels: [dbname]
           targetLabel: dbname
           replacement: "$1"
-        - sourceLabels: [relname]
+        - action: replace
+          sourceLabels: [relname]
           targetLabel: relname
           replacement: "$1"
-        - sourceLabels: [schemaname]
+        - action: replace
+          sourceLabels: [schemaname]
           targetLabel: schemaname
           replacement: "$1"
