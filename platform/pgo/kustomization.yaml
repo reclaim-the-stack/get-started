@@ -6,3 +6,17 @@ resources:
   - github.com/CrunchyData/postgres-operator-examples/kustomize/install/namespace?ref=f1766db0b50ad2ae8ff35a599a16e11eefbd9f9c
   - github.com/CrunchyData/postgres-operator-examples/kustomize/install/default?ref=f1766db0b50ad2ae8ff35a599a16e11eefbd9f9c
   - ./podmonitor.yaml
+
+# Dashboards origin: https://github.com/CrunchyData/postgres-operator-examples/tree/f14aeff743f8c48482ac22f9467b53945a0d568d/kustomize/monitoring/dashboards
+configMapGenerator:
+  - name: crunchy-postgres-dashboards
+    namespace: monitoring
+    options:
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      labels:
+        grafana_dashboard: "1"
+    files:
+      - dashboards/pgbackrest.json
+      - dashboards/postgresql.json
+      - dashboards/queries.json
