@@ -1,0 +1,1 @@
+We have to keep ArgoCD monitoring in this separate directory since when we bootstrap ArgoCD via the `platform/argocd` directory we don't have `kube-prometheus-stack` installed and trying to apply the `ServiceMonitor` resources would result in an Error.

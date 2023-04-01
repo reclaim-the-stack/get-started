@@ -8,9 +8,11 @@ spec:
     namespace: argocd
     server: https://kubernetes.default.svc
   project: platform
-  source:
-    path: platform/argocd
-    repoURL: https://github.com/reclaim-the-stack/get-started.git
+  sources:
+    - path: platform/argocd
+      repoURL: https://github.com/reclaim-the-stack/get-started.git
+    - path: platform/argocd-monitoring
+      repoURL: https://github.com/reclaim-the-stack/get-started.git
   syncPolicy:
     automated:
       allowEmpty: true

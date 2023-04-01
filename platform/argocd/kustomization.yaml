@@ -2,7 +2,6 @@ namespace: argocd # NOTE: namespace is created via kubectl during bootstrapping
 resources:
   - ./namespace.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v2.6.7/manifests/install.yaml
-  # - ./service-monitors.yaml
 
 # The following can't be added as `resources` because the install manifest already have them defined
 patchesStrategicMerge:
