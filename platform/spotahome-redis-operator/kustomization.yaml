@@ -5,3 +5,26 @@ resources:
   - ./namespace.yaml
   - github.com/spotahome/redis-operator/manifests/kustomize/overlays/full?ref=v1.2.4
   - ./redis-servicemonitor.yaml
+
+configMapGenerator:
+  - name: spotahome-redis-dashboards
+    namespace: monitoring
+    options:
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      labels:
+        grafana_dashboard: "1"
+    files:
+      - dashboards/redis.json
+
+# Since defining namespace: on the Kustomization overrides the namespace on all resources, but the
+# ConfigMap must reside in the monitoring namespace we over-override it with an explicit patch.
+patchesJson6902:
+  - target:
+      version: v1
+      kind: ConfigMap
+      name: spotahome-redis-dashboards
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: monitoring
