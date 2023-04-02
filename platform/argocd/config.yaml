@@ -52,7 +52,8 @@ data:
       - ".webhooks[]?.clientConfig.caBundle"
       - ".webhooks[]?.failurePolicy"
 
-  # Ignores a dynamically applied Kubernetes feature for Loki: https://github.com/grafana/loki/issues/7249
-  resource.customizations.ignoreDifferences.apps_StatefulSet: |
+  # linkerd CRD diff fix
+  resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition:
+    |
     jsonPointers:
-      - /spec/persistentVolumeClaimRetentionPolicy
+      - /spec/names/shortNames
