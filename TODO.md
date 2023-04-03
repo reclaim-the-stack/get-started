@@ -1,0 +1,2 @@
+- Enable `alertmanager` in `platform/kube-prometheus-stack/kustomization.yaml`
+- Do we need persistence for Grafana?
