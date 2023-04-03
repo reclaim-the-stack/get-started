@@ -3,6 +3,10 @@ kind: Application
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    # ArgoCD will already be synced after bootstrap and seems to get stuck in "Progressing" state
+    # while the other apps are busy installing even if it's otherwise fully healthy.
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   destination:
     namespace: argocd
