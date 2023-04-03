@@ -12,7 +12,7 @@ spec:
   project: platform
   source:
     path: platform/linkerd-viz
-    repoURL: https://github.com/reclaim-the-stack/get-started.git
+    repoURL: https://github.com/<github-user>/<repo-name>.git
   syncPolicy:
     automated:
       allowEmpty: true
