@@ -70,10 +70,10 @@ helmCharts:
             uid: loki
             type: loki
             url: http://qryn.logging.svc:3100
-        #   - name: linkerd
-        #     uid: linkerd
-        #     type: prometheus
-        #     url: http://prometheus.linkerd-viz.svc:9090
+          # - name: linkerd
+          #   uid: linkerd
+          #   type: prometheus
+          #   url: http://prometheus.linkerd-viz.svc:9090
 
       prometheus-node-exporter:
         prometheus:
