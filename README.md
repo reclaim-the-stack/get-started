@@ -5,7 +5,7 @@ Before proceeding fork and clone this repository. Then search and replace `https
 The following script will do the search+replace for you provided that you cloned your fork via the https protocol:
 
 ```
-ORIGINAL_URL="https://github.com/<your-github-user>/<your-repo-name>"
+ORIGINAL_URL="https://github.com/<your-github-user>/<your-repo-name>.git"
 NEW_URL=`git remote get-url origin`
 # NOTE: sed -i '' is required on MacOS but breaks on Linux, on Linux use -i'' without space instead
 grep -rl $ORIGINAL_URL | grep -v README.md | xargs sed -i '' "s|$ORIGINAL_URL|$NEW_URL|g"
