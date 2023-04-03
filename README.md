@@ -2,6 +2,18 @@
 
 Before proceeding fork and clone this repository. Then search and replace `https://github.com/<your-github-user>/<your-repo-name>.git` with the URL of your fork and commit + push the change.
 
+The following script will do the search+replace for you provided that you cloned your fork via the https protocol:
+
+```
+ORIGINAL_URL="https://github.com/<your-github-user>/<your-repo-name>"
+NEW_URL=`git remote get-url origin`
+# NOTE: sed -i '' is required on MacOS but breaks on Linux, on Linux use -i'' without space instead
+grep -rl $ORIGINAL_URL | grep -v README.md | xargs sed -i '' "s|$ORIGINAL_URL|$NEW_URL|g"
+git add .
+git commit -m "Switch repository to $NEW_URL"
+git push
+```
+
 You're now ready to follow this README step by step and start reclaiming that stack! 💪
 
 ## Bootstrap a Local Cluster
@@ -126,6 +138,8 @@ For events you need "just the `push` event".
 
 ### Tear-down
 
+Wipe the local cluster and related config and the cloudflared tunnel:
+
 ```
 talosctl cluster destroy --name reclaim-the-stack
 kubectl config unset contexts.admin@reclaim-the-stack
@@ -135,3 +149,5 @@ yq eval -i 'del(.contexts."reclaim-the-stack")' ~/.talos/config
 cloudflared tunnel cleanup reclaim-the-stack
 cloudflared tunnel delete reclaim-the-stack
 ```
+
+If you set up any DNS records you'll have to delete those manually.
