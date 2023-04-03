@@ -13,7 +13,7 @@ spec:
   project: platform
   source:
     path: platform/cloudflared
-    repoURL: https://github.com/reclaim-the-stack/get-started.git
+    repoURL: https://github.com/<your-github-user>/<your-repo-name>.git
   syncPolicy:
     automated:
       allowEmpty: true

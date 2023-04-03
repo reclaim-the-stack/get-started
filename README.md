@@ -1,8 +1,12 @@
 # Reclaim the Stack: Get Started
 
-## Local Cluster
+Before proceeding fork and clone this repository. Then search and replace `https://github.com/<your-github-user>/<your-repo-name>.git` with the URL of your fork and commit + push the change.
 
-### Bootstrap
+You're now ready to follow this README step by step and start reclaiming that stack! 💪
+
+## Bootstrap a Local Cluster
+
+If you already have an empty Kubernetes cluster ready you can skip this part. But if you don't here is a way to get a local Talos Linux based Kubernetes cluster going on top of Docker. When you're done experimenting you can follow the Tear Down instructions at the end of the README.
 
 **Prerequisites**
 

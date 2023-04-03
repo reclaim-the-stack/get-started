@@ -14,9 +14,9 @@ spec:
   project: platform
   sources:
     - path: platform/argocd
-      repoURL: https://github.com/reclaim-the-stack/get-started.git
+      repoURL: https://github.com/<your-github-user>/<your-repo-name>.git
     - path: platform/argocd-monitoring
-      repoURL: https://github.com/reclaim-the-stack/get-started.git
+      repoURL: https://github.com/<your-github-user>/<your-repo-name>.git
   syncPolicy:
     automated:
       allowEmpty: true
