@@ -20,7 +20,7 @@ spec:
           auto: "true"
         layout:
           shardsCount: 1
-          replicasCount: 1
+          replicasCount: 1 # TODO: Increase to 2+ for HA
   templates:
     serviceTemplates:
       - name: chi-service-template

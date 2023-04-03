@@ -4,7 +4,7 @@ metadata:
   name: qryn
   namespace: logging
 spec:
-  replicas: 1
+  replicas: 1 # # TODO: Increase to 2+ for HA
   selector:
     matchLabels:
       app: qryn

@@ -78,7 +78,7 @@ helmCharts:
         externalSecret: true
         caBundle: *webhookIssuer
       webhookFailurePolicy: Ignore # We allow pods to start up unmeshed if something goes wrong
-      controllerReplicas: 1
+      controllerReplicas: 1 # TODO: Increase to 3 for HA
       enablePodDisruptionBudget: true
       deploymentStrategy:
         rollingUpdate:

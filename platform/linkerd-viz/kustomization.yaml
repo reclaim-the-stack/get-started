@@ -10,7 +10,7 @@ helmCharts:
     namespace: linkerd-viz
     valuesInline:
       tap:
-        replicas: 3
+        replicas: 1 # TODO: Increase to 3 for HA
         resources:
           cpu:
             request: 100m

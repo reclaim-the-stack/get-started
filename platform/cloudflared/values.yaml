@@ -1,1 +1,1 @@
-replicas: 1
+replicas: 1 # TODO: Increase to 2+ for HA
