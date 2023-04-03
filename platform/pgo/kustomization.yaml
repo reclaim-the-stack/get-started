@@ -20,3 +20,5 @@ configMapGenerator:
       - dashboards/pgbackrest.json
       - dashboards/postgresql.json
       - dashboards/queries.json
+generatorOptions:
+  disableNameSuffixHash: true

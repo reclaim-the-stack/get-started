@@ -62,3 +62,16 @@ helmCharts:
           memory:
             limit: 8192Mi
             request: 300Mi
+
+configMapGenerator:
+  - name: linkerd-application-dashboards
+    namespace: monitoring
+    options:
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      labels:
+        grafana_dashboard: "1"
+    files:
+      - dashboards/application.json
+generatorOptions:
+  disableNameSuffixHash: true

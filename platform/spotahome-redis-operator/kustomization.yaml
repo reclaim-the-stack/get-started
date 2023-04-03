@@ -16,6 +16,8 @@ configMapGenerator:
         grafana_dashboard: "1"
     files:
       - dashboards/redis.json
+generatorOptions:
+  disableNameSuffixHash: true
 
 # Since defining namespace: on the Kustomization overrides the namespace on all resources, but the
 # ConfigMap must reside in the monitoring namespace we over-override it with an explicit patch.
