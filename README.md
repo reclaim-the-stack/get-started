@@ -18,11 +18,11 @@ talosctl cluster create \
   --name reclaim-the-stack \
   --image ghcr.io/siderolabs/talos:v1.3.6 \
   --kubernetes-version 1.26.2 \
-  --workers 3 \
+  --workers 1 \
   --cpus "2.0" \
-  --cpus-workers "2.0" \
+  --cpus-workers "4.0" \
   --memory 2048 \
-  --memory-workers 2048 \
+  --memory-workers 4096 \
   --config-patch-worker @platform/talos-worker-patch.yaml
 ```
 
@@ -46,20 +46,6 @@ Before proceeding to the Installation section, ensure to label the worker node w
 ```
 kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/worker=
 kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/database=
-kubectl label nodes reclaim-the-stack-worker-2 node-role.kubernetes.io/worker=
-kubectl label nodes reclaim-the-stack-worker-2 node-role.kubernetes.io/database=
-kubectl label nodes reclaim-the-stack-worker-3 node-role.kubernetes.io/worker=
-kubectl label nodes reclaim-the-stack-worker-3 node-role.kubernetes.io/database=
-```
-
-### Tear-down
-
-```
-talosctl cluster destroy --name reclaim-the-stack
-kubectl config unset contexts.admin@reclaim-the-stack
-kubectl config unset users.admin@reclaim-the-stack
-kubectl config unset clusters.reclaim-the-stack
-yq eval -i 'del(.contexts."reclaim-the-stack")' ~/.talos/config
 ```
 
 ## Installation
@@ -84,9 +70,12 @@ kubectl port-forward services/argocd-server -n argocd 8080:443
 
 Now navigate to https://localhost:8080 in your web browser, proceed through the self signed certificate warning and login with username `admin` and the password you exposed using the above command.
 
-You can now apply our `argocd-root` manifest to get the platform installed via ArgoCD:
+You can now prepare the elevated security rights for the default namespace (to support `linkerd` injection) and apply our `argocd-root` manifest to get the platform installed via ArgoCD:
 
 ```
+kubectl label namespace default pod-security.kubernetes.io/enforce=privileged
+kubectl label namespace default pod-security.kubernetes.io/warn=privileged
+
 kubectl create -f argocd-root.yaml
 ```
 
@@ -130,3 +119,15 @@ When you got ingress working and can reach ArgoCD via your domain you can add a 
 The URL structure of the webhook is: `https://argocd.<your-domain.com>/api/webhook`
 The content type should be `application/json`
 For events you need "just the `push` event".
+
+### Tear-down
+
+```
+talosctl cluster destroy --name reclaim-the-stack
+kubectl config unset contexts.admin@reclaim-the-stack
+kubectl config unset users.admin@reclaim-the-stack
+kubectl config unset clusters.reclaim-the-stack
+yq eval -i 'del(.contexts."reclaim-the-stack")' ~/.talos/config
+cloudflared tunnel cleanup reclaim-the-stack
+cloudflared tunnel delete reclaim-the-stack
+```
