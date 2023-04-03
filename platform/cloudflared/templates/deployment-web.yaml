@@ -13,8 +13,8 @@ spec:
     metadata:
       labels:
         app: cloudflared
-      # annotations:
-      #   linkerd.io/inject: enabled
+      annotations:
+        linkerd.io/inject: enabled
     spec:
       affinity:
         podAntiAffinity:

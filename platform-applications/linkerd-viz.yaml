@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     # Should not be applied before linkerd installation is completed
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   destination:
     server: https://kubernetes.default.svc

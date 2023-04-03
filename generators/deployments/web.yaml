@@ -36,8 +36,8 @@ spec:
     metadata:
       labels:
         app: {{ .Chart.Name }}-%{name}
-      # annotations:
-      #   linkerd.io/inject: enabled
+      annotations:
+        linkerd.io/inject: enabled
     spec:
       containers:
         - name: web
