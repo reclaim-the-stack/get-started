@@ -1,0 +1,64 @@
+resources:
+  - ./namespace.yaml
+  - ./certificates.yaml
+  - ./webhook-issuer-secret.yaml
+helmCharts:
+  - name: linkerd-viz
+    repo: https://helm.linkerd.io/stable
+    releaseName: linkerd-viz
+    version: 30.3.6
+    namespace: linkerd-viz
+    valuesInline:
+      tap:
+        replicas: 3
+        resources:
+          cpu:
+            request: 100m
+          memory:
+            limit: 250Mi
+            request: 50Mi
+        externalSecret: true
+        # ../linkerd/certificates.sh -> webhook-issuer.crt
+        caBundle: &webhookIssuer |
+          -----BEGIN CERTIFICATE-----
+          MIIBljCCATygAwIBAgIRAOWamSFB+nx6KZTZIuPlOrEwCgYIKoZIzj0EAwIwKDEm
+          MCQGA1UEAxMdd2ViaG9vay5saW5rZXJkLmNsdXN0ZXIubG9jYWwwIBcNMjMwNDAy
+          MTEzNTQyWhgPMjEyMzAzMDkxMTM1NDJaMCgxJjAkBgNVBAMTHXdlYmhvb2subGlu
+          a2VyZC5jbHVzdGVyLmxvY2FsMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPSOv
+          jtBuELveKwiDyrH2HMCkpJbN4PGfFTgt3n+5whLXQH4VhPTkHVyJgRimNH3rxDPM
+          LjN/3gWZUX/9uvSlT6NFMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYB
+          Af8CAQEwHQYDVR0OBBYEFK3eXet9FPUz03RLi6bshvrRd+JrMAoGCCqGSM49BAMC
+          A0gAMEUCIQCoWYJ6zyRTLDrLyv2dAqf2/04JAkeDFljLWEy6pg58ngIgaNen+YhX
+          Ui2f1NhKAxJe3yEbIYU1cUuZMmY+Maw0wtw=
+          -----END CERTIFICATE-----
+      tapInjector:
+        externalSecret: true
+        caBundle: *webhookIssuer
+      enablePodAntiAffinity: true
+      resources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi
+      dashboard:
+        enforcedHostRegexp: ^.*$
+        resources:
+          cpu:
+            request: 100m
+          memory:
+            limit: 250Mi
+            request: 50Mi
+      prometheus:
+        args:
+          storage.tsdb.retention.time: 7d
+        persistence:
+          enabled: true
+          size: 30Gi
+          accessMode: "ReadWriteOnce"
+        resources:
+          cpu:
+            request: 300m
+          memory:
+            limit: 8192Mi
+            request: 300Mi

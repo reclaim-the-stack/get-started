@@ -1,20 +1,21 @@
-# Enable this when you're ready to use Cloudflared as ingress
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cloudflared
+  name: linkerd-viz
   namespace: argocd
   annotations:
+    # Should not be applied before linkerd installation is completed
     argocd.argoproj.io/sync-wave: "3"
 spec:
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
   project: platform
   source:
-    path: platform/cloudflared
+    path: platform/linkerd-viz
     repoURL: https://github.com/reclaim-the-stack/get-started.git
   syncPolicy:
     automated:
       allowEmpty: true
       prune: true
+    syncOptions:
+      - ServerSideApply=true

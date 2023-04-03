@@ -1,0 +1,130 @@
+resources:
+  - ./namespace.yaml
+  - ./certificates.yaml
+  - ./webhook-issuer-secret.yaml
+helmCharts:
+  - name: linkerd-crds
+    repo: https://helm.linkerd.io/stable
+    releaseName: linkerd-crds
+    version: 1.4.0
+    namespace: linkerd
+  - name: linkerd-control-plane
+    repo: https://helm.linkerd.io/stable
+    releaseName: linkerd
+    version: 1.9.6
+    namespace: linkerd
+    valuesInline:
+      proxyInit:
+        # - SMTP (587) - This bricked our communication with Sendgrid.
+        # - Galera (4567,4568) - This was part of the default values in the helm chart.
+        ignoreOutboundPorts: "587,4567,4568"
+      disableHeartBeat: true
+      # certificates.sh -> trust-anchor.crt
+      identityTrustAnchorsPEM: |
+        -----BEGIN CERTIFICATE-----
+        MIIBjjCCATWgAwIBAgIQc9QIfq4pHt4winIJQa5o7zAKBggqhkjOPQQDAjAlMSMw
+        IQYDVQQDExpyb290LmxpbmtlcmQuY2x1c3Rlci5sb2NhbDAgFw0yMzA0MDIxMTM1
+        NDJaGA8yMTIzMDMwOTExMzU0MlowJTEjMCEGA1UEAxMacm9vdC5saW5rZXJkLmNs
+        dXN0ZXIubG9jYWwwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASf6Iw1dr9gUfMn
+        SH61FHzdlx4LTA5UQ2QSOCFJWB4wNvmeMT9QkLGIpE7HrWZnQHsVY69J0vGAs5J+
+        75EWx5Pqo0UwQzAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgwBgEB/wIBATAd
+        BgNVHQ4EFgQUh1oOj8tSRpmeZ9OVTJqCM5pYdecwCgYIKoZIzj0EAwIDRwAwRAIg
+        YDYb3aK+c8msRRrI/4Z3tx3yUBae2A4ugODFt4ONTQ4CIBcw3dlXr9m40wOZ5uvR
+        +fqUF1/uXDdvLJDdUCFKRIP7
+        -----END CERTIFICATE-----
+      identity:
+        issuer:
+          tls:
+            # certificates.sh -> identity.crt
+            crtPEM: |
+              -----BEGIN CERTIFICATE-----
+              MIIBtjCCAVugAwIBAgIRAMxfvzaa50ctZp8lLxZfcqkwCgYIKoZIzj0EAwIwJTEj
+              MCEGA1UEAxMacm9vdC5saW5rZXJkLmNsdXN0ZXIubG9jYWwwIBcNMjMwNDAyMTEz
+              NTQyWhgPMjEyMjA0MDMwNTM1NDJaMCkxJzAlBgNVBAMTHmlkZW50aXR5Lmxpbmtl
+              cmQuY2x1c3Rlci5sb2NhbDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBq1wKDh
+              Ajn4d3Fb0fFz89CAeBp39rH5OFtvHqpSwMuimDmhiuf2aIjDcMQFoqxfEoUYvtGJ
+              Mm4O3TnASF4IweqjZjBkMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/
+              AgEAMB0GA1UdDgQWBBTqGWAzNoWYwsD4TZkLdRXMCKUnyTAfBgNVHSMEGDAWgBSH
+              Wg6Py1JGmZ5n05VMmoIzmlh15zAKBggqhkjOPQQDAgNJADBGAiEAkWrOo0YnCvV9
+              QKt0GrwmbbLrCapONQnUTF90qK050YkCIQDhSLDnFMQoCar0tuL023GnD7hOgevw
+              bv8N4N4k9Ex0sw==
+              -----END CERTIFICATE-----
+            # certificates.sh -> identity.key
+            keyPEM: |
+              -----BEGIN EC PRIVATE KEY-----
+              MHcCAQEEIGlsf4HPQjbhPJn+9Q9eZvpF3zgJTkuepXRp/DhixOFloAoGCCqGSM49
+              AwEHoUQDQgAEGrXAoOECOfh3cVvR8XPz0IB4Gnf2sfk4W28eqlLAy6KYOaGK5/Zo
+              iMNwxAWirF8ShRi+0Ykybg7dOcBIXgjB6g==
+              -----END EC PRIVATE KEY-----
+      policyValidator:
+        externalSecret: true
+        # certificates.sh -> webhook-issuer.crt
+        caBundle: &webhookIssuer |
+          -----BEGIN CERTIFICATE-----
+          MIIBljCCATygAwIBAgIRAOWamSFB+nx6KZTZIuPlOrEwCgYIKoZIzj0EAwIwKDEm
+          MCQGA1UEAxMdd2ViaG9vay5saW5rZXJkLmNsdXN0ZXIubG9jYWwwIBcNMjMwNDAy
+          MTEzNTQyWhgPMjEyMzAzMDkxMTM1NDJaMCgxJjAkBgNVBAMTHXdlYmhvb2subGlu
+          a2VyZC5jbHVzdGVyLmxvY2FsMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPSOv
+          jtBuELveKwiDyrH2HMCkpJbN4PGfFTgt3n+5whLXQH4VhPTkHVyJgRimNH3rxDPM
+          LjN/3gWZUX/9uvSlT6NFMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYB
+          Af8CAQEwHQYDVR0OBBYEFK3eXet9FPUz03RLi6bshvrRd+JrMAoGCCqGSM49BAMC
+          A0gAMEUCIQCoWYJ6zyRTLDrLyv2dAqf2/04JAkeDFljLWEy6pg58ngIgaNen+YhX
+          Ui2f1NhKAxJe3yEbIYU1cUuZMmY+Maw0wtw=
+          -----END CERTIFICATE-----
+      proxyInjector:
+        externalSecret: true
+        caBundle: *webhookIssuer
+      profileValidator:
+        externalSecret: true
+        caBundle: *webhookIssuer
+      webhookFailurePolicy: Ignore # We allow pods to start up unmeshed if something goes wrong
+      controllerReplicas: 1
+      enablePodDisruptionBudget: true
+      deploymentStrategy:
+        rollingUpdate:
+          maxUnavailable: 1
+          maxSurge: 25%
+      enablePodAntiAffinity: true
+      proxy:
+        resources:
+          cpu:
+            request: 100m
+          memory:
+            limit: 250Mi
+            request: 20Mi
+      controllerResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi
+      destinationResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi
+      identityResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 10Mi
+      heartbeatResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi
+      proxyInjectorResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi
+      spValidatorResources:
+        cpu:
+          request: 100m
+        memory:
+          limit: 250Mi
+          request: 50Mi

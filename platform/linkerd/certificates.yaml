@@ -1,0 +1,66 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: webhook-issuer
+  namespace: linkerd
+spec:
+  ca:
+    secretName: webhook-issuer-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-policy-validator
+  namespace: linkerd
+spec:
+  secretName: linkerd-policy-validator-k8s-tls
+  duration: 867834h0m0s # 99 years
+  issuerRef:
+    name: webhook-issuer
+    kind: Issuer
+  commonName: linkerd-policy-validator.linkerd.svc
+  dnsNames:
+    - linkerd-policy-validator.linkerd.svc
+  privateKey:
+    algorithm: ECDSA
+    encoding: PKCS8
+  usages:
+    - server auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-proxy-injector
+  namespace: linkerd
+spec:
+  secretName: linkerd-proxy-injector-k8s-tls
+  duration: 867834h0m0s # 99 years
+  issuerRef:
+    name: webhook-issuer
+    kind: Issuer
+  commonName: linkerd-proxy-injector.linkerd.svc
+  dnsNames:
+    - linkerd-proxy-injector.linkerd.svc
+  privateKey:
+    algorithm: ECDSA
+  usages:
+    - server auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkerd-sp-validator
+  namespace: linkerd
+spec:
+  secretName: linkerd-sp-validator-k8s-tls
+  duration: 867834h0m0s # 99 years
+  issuerRef:
+    name: webhook-issuer
+    kind: Issuer
+  commonName: linkerd-sp-validator.linkerd.svc
+  dnsNames:
+    - linkerd-sp-validator.linkerd.svc
+  privateKey:
+    algorithm: ECDSA
+  usages:
+    - server auth
