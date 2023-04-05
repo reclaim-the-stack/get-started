@@ -38,6 +38,7 @@ spec:
         app: {{ .Chart.Name }}-%{name}
       annotations:
         linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: web
     spec:
       containers:
         - name: web
@@ -45,17 +46,19 @@ spec:
           command:
             - sh
             - -c
-            - {{ .Values.deployments.web.command | default "bin/rails server" }}
+            - {{ .Values.deployments.%{camelName}.command | default "bin/rails server" }}
           ports:
             - containerPort: {{ .Values.deployments.%{camelName}.port }}
-          # readinessProbe:
-          #   httpGet:
-          #     path: /up
-          #     port: {{ .Values.deployments.%{name}.port }}
-          # livelinessProbe:
-          #   httpGet:
-          #     path: /up
-          #     port: {{ .Values.deployments.%{name}.port }}
+          securityContext:
+            capabilities:
+              add:
+              - NET_BIND_SERVICE
+          {{- if .Values.deployments.%{camelName}.readinessProbePath }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployments.%{camelName}.readinessProbePath }}
+              port: {{ .Values.deployments.%{camelName}.port }}
+          {{- end }}
           resources:
             limits:
               memory: {{ .Values.deployments.%{camelName}.memory }}
@@ -78,8 +81,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.deployments.%{name}.port }}
-      targetPort: {{ .Values.deployments.%{name}.port }}
+    - port: {{ .Values.deployments.%{camelName}.port }}
+      targetPort: {{ .Values.deployments.%{camelName}.port }}
       protocol: TCP
   selector:
     app: {{ .Chart.Name }}-%{name}

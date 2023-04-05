@@ -1,0 +1,52 @@
+# Creates a generic Deployment. Command to run must be configured via .scaling.%{name}.command.
+#
+# Example values.yaml:
+# image: %{image}
+# deployments:
+#   %{camelName}:
+#     replicas: 1
+#     memory: 512Mi
+#     cpu: 250m
+#     env: [] # Put ENV which should only apply to this deployment here
+#     command: <command-to-run>
+# envFrom:
+#   - secretRef:
+#       name: %{application} # Create a dedicated application secret with k secrets:create %{application}
+# env: [] # Put ENV which applies to all deployments here
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-%{name}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.scaling.%{camelName}.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-%{name}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-%{name}
+        kubectl.kubernetes.io/default-container: command
+    spec:
+      containers:
+        - name: command
+          image: {{ .Values.image }}
+          command:
+            - sh
+            - c
+            - {{ .Values.scaling.%{camelName}.command }}
+          resources:
+            limits:
+              memory: {{ .Values.scaling.%{camelName}.memory }}
+              cpu: {{ .Values.scaling.%{camelName}.cpu }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.%{camelName}.env }}
+            {{- .Values.deployments.%{camelName}.env | toYaml | nindent 12 }}
+            {{- end }}

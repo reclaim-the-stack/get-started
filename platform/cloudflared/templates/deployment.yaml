@@ -15,6 +15,7 @@ spec:
         app: cloudflared
       annotations:
         linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: cloudflared
     spec:
       affinity:
         podAntiAffinity:

@@ -1,0 +1,54 @@
+# Creates a generic Deployment. Command to run must be configured via .deployments.%{name}.command.
+#
+# Example values.yaml:
+# image: %{image}
+# deployments:
+#   %{camelName}:
+#     replicas: 1
+#     memory: 512Mi
+#     cpu: 250m
+#     env: [] # Put ENV which should only apply to the sidekiq deployment here
+#     # command: <custom-command> (if you don't want to bundle exec sidekiq)
+# envFrom:
+#   - secretRef:
+#       name: %{application} # Create a dedicated application secret with k secrets:create %{application}
+# env: [] # Put ENV which applies to all deployments here
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-%{name}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.%{camelName}.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-%{name}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-%{name}
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: sidekiq
+    spec:
+      containers:
+        - name: sidekiq
+          image: {{ .Values.image }}
+          command:
+            - sh
+            - -c
+            - {{ .Values.deployments.%{camelName}.command | default "bundle exec sidekiq" }}
+          resources:
+            limits:
+              memory: {{ .Values.deployments.%{camelName}.memory }}
+              cpu: {{ .Values.deployments.%{camelName}.cpu }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.%{camelName}.env }}
+            {{- .Values.deployments.%{camelName}.env | toYaml | nindent 12 }}
+            {{- end }}
