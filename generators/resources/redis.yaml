@@ -13,7 +13,7 @@
 #     cpu: 250m
 #     disk: 500Mi
 # env:
-#   - { name: REDIS_URL, value: "redis://%{application}%{suffix}-master.default.svc:6379" }
+#   - { name: REDIS_URL, value: "redis://%{application}%{suffix}-redis-master.default.svc:6379" }
 #   # NOTE: Redis clients do not support SENTINEL_URL out of the box, you'll have to write your own
 #   # initialization logic. We recommend using it instead of REDIS_URL for 0 downtime failovers.
 #   - { name: SENTINEL_URL, value: "redis-sentinel://rfs-%{application}%{suffix}:26379/mymaster" }
@@ -77,7 +77,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}%{suffix}-master
+  name: {{ .Chart.Name }}%{suffix}-redis-master
 spec:
   ports:
     - name: redis
