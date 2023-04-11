@@ -7,7 +7,6 @@
 # image: %{image}
 # deployments:
 #   %{camelName}:
-#     port: 3000
 #     replicas: 1
 #     memory: 512Mi
 #     cpu: 250m
