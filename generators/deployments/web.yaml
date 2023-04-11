@@ -22,6 +22,7 @@
 #       name: %{application} # Create a dedicated application secret with k secrets:create %{application}
 # env: [] # Put ENV which applies to all deployments here
 
+{{- $port := .Values.deployments.%{camelName}.port | default 80 }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,9 +48,9 @@ spec:
           command:
             - sh
             - -c
-            - {{ .Values.deployments.%{camelName}.command | default "bin/rails server" }}
+            - {{ .Values.deployments.web.command | default "bin/rails server" }}
           ports:
-            - containerPort: {{ .Values.deployments.%{camelName}.port }}
+            - containerPort: {{ $port }}
           securityContext:
             capabilities:
               add:
@@ -58,7 +59,7 @@ spec:
           readinessProbe:
             httpGet:
               path: {{ .Values.deployments.%{camelName}.readinessProbePath }}
-              port: {{ .Values.deployments.%{camelName}.port }}
+              port: {{ $port }}
           {{- end }}
           resources:
             limits:
@@ -73,7 +74,7 @@ spec:
             {{- .Values.deployments.%{camelName}.env | toYaml | nindent 12 }}
             {{- end }}
             - name: PORT
-              value: "{{ .Values.deployments.%{camelName}.port }}"
+              value: "{{ $port }}"
 ---
 apiVersion: v1
 kind: Service
@@ -82,8 +83,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.deployments.%{camelName}.port }}
-      targetPort: {{ .Values.deployments.%{camelName}.port }}
+    - port: {{ $port }}
+      targetPort: {{ $port }}
       protocol: TCP
   selector:
     app: {{ .Chart.Name }}-%{name}
