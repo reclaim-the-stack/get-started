@@ -22,10 +22,10 @@ If you already have an empty Kubernetes cluster ready you can skip this part. Bu
 
 **Prerequisites**
 
-- Docker
-- kubectl
-- yq
-- talosctl (`curl -sL https://talos.dev/install | sh`)
+- Docker (eg. via [Docker Desktop](https://www.docker.com/products/docker-desktop/))
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [yq](https://github.com/mikefarah/yq#install)
+- [talosctl](https://www.talos.dev/v1.4/introduction/getting-started/#talosctl)
 
 Now bootstrap a local Docker based Talos cluster with:
 
@@ -65,6 +65,12 @@ kubectl label nodes reclaim-the-stack-worker-1 node-role.kubernetes.io/database=
 ```
 
 ## Installation
+
+**Prerequisites**
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [yq](https://github.com/mikefarah/yq#install)
+- [kubeseal](https://github.com/bitnami-labs/sealed-secrets#homebrew)
 
 The following assumes you have cloned this repository and changed current working directory into the git repository.
 
