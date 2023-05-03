@@ -1,0 +1,129 @@
+# Creates an Elasticsearch cluster with an accompanying Kibana instance.
+# Note that you should always use at least 2 replicas when deploying or
+# you'll end up in a "degraded state" since Elasticsearch expects all shards
+# to be replicated by default and overriding this setting is brittle.
+#
+# Example values.yaml:
+# resources:
+#   %{camelName}:
+#     replicas: 2 # Note: 2 replicas will also add a small third tiebreaker node
+#     memory: 1Gi # Provide at least 1Gi of RAM to avoid OOM kills
+#     cpu: 1
+#     disk: 10Gi
+# env:
+#   - { name: ELASTICSEARCH_PASSWORD, valueFrom: { secretKeyRef: { name: %{application}%{suffix}-es-elastic-user, key: elastic } } }
+#   - { name: ELASTICSEARCH_URL, value: "http://elastic:$(ELASTICSEARCH_PASSWORD)@%{application}%{suffix}-es-http:9200" }
+
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: {{ .Chart.Name }}%{suffix}
+spec:
+  version: 7.17.10
+  # Add an S3 credentials secret and uncomment this to enable S3 based snapshots via Kibana
+  # secureSettings:
+  #   - secretName: elasticsearch-s3-credentials
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  monitoring:
+    metrics:
+      elasticsearchRefs:
+        - name: {{ .Chart.Name }}%{suffix}
+    logs:
+      elasticsearchRefs:
+        - name: {{ .Chart.Name }}%{suffix}
+  nodeSets:
+    - name: default
+      count: {{ .Values.resources.%{camelName}.replicas }}
+      config:
+        node.store.allow_mmap: true # disable this if you haven't increased vm.max_map_count
+      podTemplate:
+        spec:
+          initContainers:
+            - name: install-plugins
+              command:
+                - sh
+                - -c
+                - /bin/test -d /usr/share/elasticsearch/plugins/repository-s3 || bin/elasticsearch-plugin install --batch repository-s3
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: {{ .Values.resources.%{camelName}.memory }}
+                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+                limits:
+                  memory: {{ .Values.resources.%{camelName}.memory }}
+                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+          tolerations:
+            - key: role
+              value: database
+              effect: NoSchedule
+          nodeSelector:
+            node-role.kubernetes.io/database: ""
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: {{ .Values.resources.%{camelName}.disk }}
+    {{- if eq (int .Values.resources.%{camelName}.replicas) 2 }}
+    - name: tiebreaker
+      count: 1
+      config:
+        node.roles: [master, voting_only]
+      podTemplate:
+        spec:
+          initContainers:
+            - name: install-plugins
+              command:
+                - sh
+                - -c
+                - /bin/test -d /usr/share/elasticsearch/plugins/repository-s3 || bin/elasticsearch-plugin install --batch repository-s3
+          containers:
+            - name: elasticsearch
+              resources:
+                requests:
+                  memory: 1Gi
+                  cpu: 1
+                limits:
+                  memory: 1Gi
+          tolerations:
+            - key: role
+              value: database
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/database
+                        operator: Exists
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+    {{- end }}
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: {{ .Chart.Name }}%{suffix}
+spec:
+  version: 7.17.10
+  count: 1
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+  elasticsearchRef:
+    name: {{ .Chart.Name }}%{suffix}
