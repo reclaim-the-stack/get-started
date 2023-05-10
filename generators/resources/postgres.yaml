@@ -113,12 +113,12 @@ spec:
       #       full: "0 1 * * 0" # At 01:00 on Sunday
       #       differential: "0 1 * * 1-6" # At 01:00 Monday through Saturday
       #     s3:
-      #       bucket: devops-kubernetes-backups
-      #       endpoint: s3.eu-north-1.amazonaws.com
-      #       region: eu-north-1
+      #       bucket: <bucket-name>
+      #       endpoint: <eg. s3.eu-north-1.amazonaws.com>
+      #       region: <eg. eu-north-1>
       # configuration:
       #   - secret:
-      #       name: pgbackrest-aws-credentials
+      #       name: pgbackrest-s3-credentials
 ---
 # Give CREATE privilege on the public schema to allow Postgres 15 to work as previous versions
 # Give SELECT privilege to the readonly user for tables created by the default database user
