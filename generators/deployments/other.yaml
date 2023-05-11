@@ -27,9 +27,11 @@ spec:
       app: {{ .Chart.Name }}-%{name}
   template:
     metadata:
+      annotations:
+        linkerd.io/inject: enabled
+        kubectl.kubernetes.io/default-container: command
       labels:
         app: {{ .Chart.Name }}-%{name}
-        kubectl.kubernetes.io/default-container: command
     spec:
       containers:
         - name: command
