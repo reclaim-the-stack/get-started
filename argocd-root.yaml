@@ -1,5 +1,5 @@
 # Configures ArgoCD to automatically sync all resources in the platform-applications directory
-# as well as all sub-folders to the applications directory.
+# as well as all sub-directories of the applications directory.
 
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
