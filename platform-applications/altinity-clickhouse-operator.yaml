@@ -7,7 +7,7 @@ spec:
   project: platform
   source:
     chart: altinity-clickhouse-operator
-    repoURL: https://docs.altinity.com/altinitykubernetesoperator/
+    repoURL: https://docs.altinity.com/clickhouse-operator/
     targetRevision: 0.21.0
   destination:
     server: https://kubernetes.default.svc
