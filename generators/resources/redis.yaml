@@ -9,7 +9,7 @@
 #   redis:
 #     sentinels: 3
 #     replicas: 2
-#     memory: 100Mi
+#     memory: 100Mi # must use Gi or Mi format
 #     cpu: 250m
 #     disk: 500Mi
 # env:
@@ -42,6 +42,17 @@ spec:
           memory: 100Mi
   redis:
     replicas: {{ .Values.resources.%{camelName}.replicas }}
+    # NOTE: We use native Redis maxmemory instead of Kubernetes resource limits to avoid OOM kills
+    {{- $maxmemory := .Values.resources.%{camelName}.memory }}
+    {{- if hasSuffix "Gi" $maxmemory }}
+      {{- $maxmemory = trimSuffix "Gi" $maxmemory | mulf 1074 }}
+    {{- else if hasSuffix "Mi" $maxmemory }}
+      {{- $maxmemory = trimSuffix "Mi" $maxmemory | mulf 1.049 | int }}
+    {{- else }}
+      {{- fail "resources.%{camelName}.memory must use Gi or Mi format" }}
+    {{- end }}
+    customConfig:
+      - maxmemory {{ $maxmemory }}mb
     tolerations:
       - key: role
         value: database
@@ -51,8 +62,6 @@ spec:
     resources:
       requests:
         cpu: {{ .Values.resources.%{camelName}.cpu }}
-        memory: {{ .Values.resources.%{camelName}.memory }}
-      limits:
         memory: {{ .Values.resources.%{camelName}.memory }}
     exporter:
       enabled: true
