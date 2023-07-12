@@ -71,6 +71,7 @@ spec:
                 matchLabels:
                   postgres-operator.crunchydata.com/cluster: {{ .Chart.Name }}%{suffix}
                   postgres-operator.crunchydata.com/data: postgres
+  # NOTE: when running the k pg:... commands the first user in the users array is used for authentication
   users:
     - name: {{ .Chart.Name }}%{suffix}
       password:
