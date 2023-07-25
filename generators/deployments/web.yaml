@@ -48,7 +48,7 @@ spec:
           command:
             - sh
             - -c
-            - {{ .Values.deployments.web.command | default "bin/rails server" }}
+            - {{ .Values.deployments.%{camelName}.command | default "bin/rails server" }}
           ports:
             - containerPort: {{ $port }}
           securityContext:
