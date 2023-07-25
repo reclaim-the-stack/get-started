@@ -7,7 +7,7 @@ helmCharts:
   # Promtail captures logs from all Kubernetes pods and pushes them in batches to Qryn
   - name: promtail
     repo: https://grafana.github.io/helm-charts
-    version: 6.9.3
+    version: 6.11.9
     releaseName: promtail # without this pods are named release-name
     namespace: logging
     valuesInline:
