@@ -6,12 +6,12 @@ helmCharts:
   - name: linkerd-crds
     repo: https://helm.linkerd.io/stable
     releaseName: linkerd-crds
-    version: 1.4.0
+    version: 1.8.0
     namespace: linkerd
   - name: linkerd-control-plane
     repo: https://helm.linkerd.io/stable
     releaseName: linkerd
-    version: 1.9.6
+    version: 1.15.0
     namespace: linkerd
     valuesInline:
       proxyInit:
