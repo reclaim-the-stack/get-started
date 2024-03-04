@@ -40,10 +40,14 @@ spec:
             - sh
             - c
             - {{ .Values.scaling.%{camelName}.command }}
+          # NOTE: We avoid putting a limit on CPU since Kubernetes throttling kills performance and CPU averages
+          # tends to be low, so we can allow some pods to burst when needed. Adjust as you see fit.
           resources:
+            requests:
+              memory: {{ .Values.deployments.%{camelName}.memory }}
+              cpu: {{ .Values.deployments.%{camelName}.cpu }}
             limits:
-              memory: {{ .Values.scaling.%{camelName}.memory }}
-              cpu: {{ .Values.scaling.%{camelName}.cpu }}
+              memory: {{ .Values.deployments.%{camelName}.memory }}
           envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
           env:
             {{- if .Values.env }}
