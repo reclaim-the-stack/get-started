@@ -1,8 +1,5 @@
 # Creates a Deployment and Service for a web application listening on .Values.%{name}.port.
 #
-# Liveness and readiness probes are commented out by default. You may want to make
-# an initial deploy without them and figure out which requests to use before enabling.
-#
 # Example values.yaml:
 # image: %{image}
 # deployments:
@@ -61,10 +58,14 @@ spec:
               path: {{ .Values.deployments.%{camelName}.readinessProbePath }}
               port: {{ $port }}
           {{- end }}
+          # NOTE: We avoid putting a limit on CPU since Kubernetes throttling kills performance and CPU averages
+          # tends to be low, so we can allow some pods to burst when needed. Adjust as you see fit.
           resources:
-            limits:
+            requests:
               memory: {{ .Values.deployments.%{camelName}.memory }}
               cpu: {{ .Values.deployments.%{camelName}.cpu }}
+            limits:
+              memory: {{ .Values.deployments.%{camelName}.memory }}
           envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
           env:
             {{- if .Values.env }}
