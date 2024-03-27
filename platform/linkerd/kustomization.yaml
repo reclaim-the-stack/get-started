@@ -11,7 +11,7 @@ helmCharts:
   - name: linkerd-control-plane
     repo: https://helm.linkerd.io/stable
     releaseName: linkerd
-    version: 1.15.0
+    version: 1.16.11
     namespace: linkerd
     valuesInline:
       proxyInit:
