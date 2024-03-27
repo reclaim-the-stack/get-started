@@ -6,7 +6,7 @@ helmCharts:
   - name: linkerd-viz
     repo: https://helm.linkerd.io/stable
     releaseName: linkerd-viz
-    version: 30.11.0
+    version: 30.12.11
     namespace: linkerd-viz
     valuesInline:
       tap:
