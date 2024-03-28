@@ -8,7 +8,7 @@ spec:
   source:
     chart: cert-manager
     repoURL: https://charts.jetstack.io
-    targetRevision: 1.11.0
+    targetRevision: 1.14.4
     helm:
       parameters:
         - name: installCRDs
