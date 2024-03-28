@@ -4,6 +4,6 @@ resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v2.8.4/manifests/install.yaml
 
 # The following can't be added as `resources` because the install manifest already have them defined
-patchesStrategicMerge:
-  - ./config.yaml
+patches:
+  - patch: ./config.yaml
 

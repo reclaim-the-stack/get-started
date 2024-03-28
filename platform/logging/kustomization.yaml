@@ -7,7 +7,8 @@ helmCharts:
   # Promtail captures logs from all Kubernetes pods and pushes them in batches to Qryn
   - name: promtail
     repo: https://grafana.github.io/helm-charts
-    version: 6.11.9
+    # Changelog at https://github.com/grafana/loki/blob/main/CHANGELOG.md
+    version: 6.15.5 # promtail version 2.9.3
     releaseName: promtail # without this pods are named release-name
     namespace: logging
     valuesInline:
@@ -24,7 +25,8 @@ helmCharts:
   # - name: vector
   #   repo: https://helm.vector.dev
   #   releaseName: vector
-  #   version: 0.20.1
+  #   # Changelogs at https://vector.dev/releases/
+  #   version: 0.32.0 # vector version 0.37.0
   #   namespace: logging
   #   valuesInline:
   #     role: "Agent"
