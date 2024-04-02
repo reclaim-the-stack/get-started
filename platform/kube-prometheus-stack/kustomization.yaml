@@ -1,5 +1,6 @@
 resources:
   - ./namespace.yaml
+  - ./linkerd-grafana-auth-policy.yaml
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
@@ -46,6 +47,9 @@ helmCharts:
       grafana:
         defaultDashboardsTimezone: browser
         adminPassword: changeme
+        # Required for the Grafana -> Linkerd's prometheus instance AuthorizationPolicy to work
+        podAnnotations:
+          linkerd.io/inject: enabled
         # admin:
         #   existingSecret: "<secret-name>"
         #   userKey: admin-user
