@@ -9,7 +9,7 @@ spec:
     chart: reloader
     repoURL: https://stakater.github.io/stakater-charts
     # Changelog at https://github.com/stakater/Reloader/releases
-    targetRevision: 1.0.72
+    targetRevision: 1.0.74
   destination:
     server: https://kubernetes.default.svc
     namespace: reloader
