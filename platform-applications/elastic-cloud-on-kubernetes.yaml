@@ -10,7 +10,7 @@ spec:
   source:
     chart: eck-operator
     repoURL: https://helm.elastic.co
-    targetRevision: 2.9.0
+    targetRevision: 2.12.1
   destination:
     server: https://kubernetes.default.svc
     namespace: elastic-system
