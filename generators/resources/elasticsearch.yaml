@@ -19,7 +19,7 @@ kind: Elasticsearch
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
-  version: 7.17.10
+  version: 7.17.19
   # Add an S3 credentials secret and uncomment this to enable S3 based snapshots via Kibana
   # secureSettings:
   #   - secretName: elasticsearch-s3-credentials
