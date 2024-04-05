@@ -13,7 +13,7 @@
 #     disk: 10Gi
 #     # Tip: generate configuration based on CPU / RAM settings at https://pgtune.leopard.in.ua/
 #     config:
-#       max_connections: 40
+#       max_connections: "40"
 #       shared_buffers: 256MB
 #       effective_cache_size: 768MB
 #       maintenance_work_mem: 64MB
@@ -25,114 +25,75 @@
 #       work_mem: 3276kB
 #       min_wal_size: 1GB
 #       max_wal_size: 4GB
+#       pg_stat_statements.max: "10000"
+#       pg_stat_statements.track: top
 # env:
-#   - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: %{application}%{suffix}-pguser-%{application}%{suffix}, key: uri } } }
+#   - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: %{application}%{suffix}-app, key: uri } } }
 
-apiVersion: postgres-operator.crunchydata.com/v1beta1
-kind: PostgresCluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
-  postgresVersion: 15
-  databaseInitSQL:
-    key: init.sql
-    name: {{ .Chart.Name }}%{suffix}-init-sql
-  instances:
-    - name: postgres
-      replicas: {{ .Values.resources.%{camelName}.replicas }}
-      resources:
-        requests:
-          memory: {{ .Values.resources.%{camelName}.memory }}
-          cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
-        limits:
-          memory: {{ .Values.resources.%{camelName}.memory }}
-          cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
-      dataVolumeClaimSpec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: {{ .Values.resources.%{camelName}.disk }}
-      tolerations:
-        - key: role
-          value: database
-          effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: node-role.kubernetes.io/database
-                    operator: Exists
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  postgres-operator.crunchydata.com/cluster: {{ .Chart.Name }}%{suffix}
-                  postgres-operator.crunchydata.com/data: postgres
-  # NOTE: when running the k pg:... commands the first user in the users array is used for authentication
-  users:
-    - name: {{ .Chart.Name }}%{suffix}
-      password:
-        type: AlphaNumeric
-      databases:
-        - {{ .Chart.Name }}%{suffix}
-    - name: readonly
-      password:
-        type: AlphaNumeric
-      databases:
-        - {{ .Chart.Name }}%{suffix}
-  patroni:
-    switchover:
-      enabled: true
-    dynamicConfiguration:
-      postgresql:
-        parameters: {{ .Values.resources.%{camelName}.config | toYaml | nindent 10 }}
-        pg_hba: ["host all all all md5"] # allow non SSL connections for k pg:proxy
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+  primaryUpdateStrategy: unsupervised
+  enableSuperuserAccess: false
+  instances: {{ .Values.resources.%{camelName}.replicas }}
+  resources:
+    requests:
+      memory: {{ .Values.resources.%{camelName}.memory }}
+      cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
+    limits:
+      memory: {{ .Values.resources.%{camelName}.memory }}
+      cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
+  storage:
+    size: {{ .Values.resources.%{camelName}.disk }}
+  bootstrap:
+    initdb:
+      database: {{ .Chart.Name }}
+      postInitSQL:
+        - GRANT pg_create_subscription TO "{{ .Chart.Name }}";
+  postgresql:
+    parameters:
+      {{ .Values.resources.%{camelName}.config | toYaml | nindent 6 }}
   monitoring:
-    pgmonitor:
-      exporter:
-        image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter:ubi8-5.4.0-0
-  backups:
-    pgbackrest:
-      global:
-        repo1-retention-full: "28"
-        repo1-retention-full-type: time
-        repo1-path: /pgo/{{ .Chart.Name }}%{suffix}/repo1
-      repos:
-        - name: repo1
-          volume:
-            volumeClaimSpec:
-              accessModes:
-                - ReadWriteOnce
-              resources:
-                requests:
-                  storage: {{ .Values.resources.postgres.disk }}
-      #   - name: repo2
-      #     schedules:
-      #       full: "0 1 * * 0" # At 01:00 on Sunday
-      #       differential: "0 1 * * 1-6" # At 01:00 Monday through Saturday
-      #     s3:
-      #       bucket: <bucket-name>
-      #       endpoint: <eg. s3.eu-north-1.amazonaws.com>
-      #       region: <eg. eu-north-1>
-      # configuration:
-      #   - secret:
-      #       name: pgbackrest-s3-credentials
----
-# Give CREATE privilege on the public schema to allow Postgres 15 to work as previous versions
-# Give SELECT privilege to the readonly user for tables created by the default database user
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Chart.Name }}%{suffix}-init-sql
-data:
-  init.sql: |
-    \set ON_ERROR_STOP
-    \echo "Executing init.sql"
-
-    \c {{ .Chart.Name }}
-    GRANT CREATE ON SCHEMA public TO "{{ .Chart.Name }}";
-    REVOKE CREATE ON DATABASE "{{ .Chart.Name }}" FROM readonly;
-    ALTER DEFAULT PRIVILEGES FOR USER "{{ .Chart.Name }}" IN SCHEMA public GRANT SELECT ON TABLES TO "readonly";
+    enablePodMonitor: true
+  affinity:
+    tolerations:
+      - key: role
+        value: database
+        effect: NoSchedule
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role.kubernetes.io/database
+                operator: Exists
+# The following example uses S3-compatible storage for backups. Refer to the CloudnativePG
+# documentation for more details and options like Azure and Google Cloud Storage.
+#   backup:
+#     retentionPolicy: 30d
+#     barmanObjectStore:
+#       destinationPath: s3://<bucket-name>/cloudnativepg
+#       # endpointURL: https://<s3-compatible-host> # for non-AWS S3-compatible storage
+#       # Prepare this secret with: k secrets:create cloudnativepg-s3-credentials
+#       s3Credentials:
+#         accessKeyId:
+#           name: cloudnativepg-s3-credentials
+#           key: ACCESS_KEY_ID
+#         secretAccessKey:
+#           name: cloudnativepg-s3-credentials
+#           key: SECRET_ACCESS_KEY
+#       wal:
+#         compression: gzip
+#         maxParallel: 4
+# ---
+# apiVersion: postgresql.cnpg.io/v1
+# kind: ScheduledBackup
+# metadata:
+#   name: {{ .Chart.Name }}%{suffix}
+# spec:
+#   schedule: "0 0 1 * * *" # At 01:00 every day
+#   backupOwnerReference: self
+#   cluster:
+#     name: {{ .Chart.Name }}%{suffix}
