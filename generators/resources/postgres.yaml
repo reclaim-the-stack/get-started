@@ -35,7 +35,7 @@ kind: Cluster
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.3
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: false
   instances: {{ .Values.resources.%{camelName}.replicas }}
