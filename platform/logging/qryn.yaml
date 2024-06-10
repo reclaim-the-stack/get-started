@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/metrico/qryn:3.2.17-bun
+          image: ghcr.io/metrico/qryn:3.2.22-bun
           ports:
             - containerPort: 3100
           resources:

@@ -8,7 +8,7 @@ helmCharts:
   - name: promtail
     repo: https://grafana.github.io/helm-charts
     # Changelog at https://github.com/grafana/loki/blob/main/CHANGELOG.md
-    version: 6.15.5 # promtail version 2.9.3
+    version: 6.16.0 # promtail version 3.0.0
     releaseName: promtail # without this pods are named release-name
     namespace: logging
     valuesInline:
