@@ -11,7 +11,7 @@ spec:
   project: platform
   source:
     path: platform/cloudnativepg
-    repoURL: https://<your-github-user>/<your-repo-name>/get-started.git
+    repoURL: https://github.com/<your-github-user>/<your-repo-name>.git
   syncPolicy:
     automated:
       allowEmpty: true
