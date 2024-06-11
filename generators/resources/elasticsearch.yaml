@@ -19,6 +19,8 @@ kind: Elasticsearch
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
+  # NOTE: we default to 7.x to allow compatibility with OpenSearch, but feel free to use 8.x
+  # When changing the version here, also make the correspoding change to the Kibana instance.
   version: 7.17.21
   # Add an S3 credentials secret and uncomment this to enable S3 based snapshots via Kibana
   # secureSettings:
@@ -89,7 +91,7 @@ spec:
               resources:
                 requests:
                   memory: 1Gi
-                  cpu: 1
+                  cpu: 0.03
                 limits:
                   memory: 1Gi
           tolerations:
@@ -98,7 +100,7 @@ spec:
               effect: NoSchedule
           affinity:
             nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
+              preferredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
                       - key: node-role.kubernetes.io/database
