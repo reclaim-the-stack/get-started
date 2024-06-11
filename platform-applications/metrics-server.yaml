@@ -10,11 +10,10 @@ spec:
     repoURL: https://kubernetes-sigs.github.io/metrics-server/
     targetRevision: 3.12.1 # metrics-server v0.7.1
     helm:
-      parameters:
-        - name: replicas
-          value: "1" # TODO: Increase to 2 for HA
-        - name: args[0]
-          value: --kubelet-insecure-tls
+      valuesObject:
+        replicas: 1 # TODO: Increase to 2 for HA
+        args:
+          - --kubelet-insecure-tls
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
