@@ -12,7 +12,7 @@
 #     disk: 10Gi
 # env:
 #   - { name: ELASTICSEARCH_PASSWORD, valueFrom: { secretKeyRef: { name: %{application}%{suffix}-es-elastic-user, key: elastic } } }
-#   - { name: ELASTICSEARCH_URL, value: "http://elastic:$(ELASTICSEARCH_PASSWORD)@%{application}%{suffix}-es-http:9200" }
+#   - { name: ELASTICSEARCH_URL, value: "http://elastic:$(ELASTICSEARCH_PASSWORD)@%{application}%{suffix}-es-default:9200" }
 
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
