@@ -6,7 +6,7 @@
 #
 # Example values.yaml:
 # resources:
-#   redis:
+#   %{camelName}:
 #     sentinels: 3
 #     replicas: 2
 #     memory: 100Mi # must use Gi or Mi format
