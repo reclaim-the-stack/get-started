@@ -1,10 +1,11 @@
 namespace: argocd
 resources:
-  - ./namespace.yaml
-  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.3/manifests/install.yaml
+- ./namespace.yaml
+- https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.3/manifests/install.yaml
 
 # NOTE: patchesStrategicMerge is deprecated but still works. Converting to the suggested
 # patches: { file: ./config.yaml } syntax results in a validation error.
-patchesStrategicMerge:
-  - ./config.yaml
-
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: ./config.yaml
