@@ -6,7 +6,13 @@
 # Example values.yaml:
 # resources:
 #   %{camelName}:
-#     replicas: 2 # Note: 2 replicas will also add a small third tiebreaker node
+#     # Instead of using just a number to specify the number of replicas, we use
+#     # a list of names. This allows controlling exactly which replica gets shut down
+#     # when scaling down, which is useful when eg. decommissioning a node.
+#     # Note: 2 replicas will also add a small third tiebreaker node
+#     namedReplicas:
+#       - replica1
+#       - replica2
 #     memory: 1Gi # Provide at least 1Gi of RAM to avoid OOM kills
 #     cpu: 1
 #     disk: 10Gi
@@ -37,8 +43,9 @@ spec:
       elasticsearchRefs:
         - name: {{ .Chart.Name }}%{suffix}
   nodeSets:
-    - name: default
-      count: {{ .Values.resources.%{camelName}.replicas }}
+    {{ range $replica := .Values.resources.%{camelName}.namedReplicas }}
+    - name: {{ $replica }}
+      count: 1
       config:
         node.store.allow_mmap: true # disable this if you haven't increased vm.max_map_count
       podTemplate:
@@ -53,11 +60,11 @@ spec:
             - name: elasticsearch
               resources:
                 requests:
-                  memory: {{ .Values.resources.%{camelName}.memory }}
-                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+                  memory: {{ $.Values.resources.%{camelName}.memory }}
+                  cpu: {{ $.Values.resources.%{camelName}.cpu }}
                 limits:
-                  memory: {{ .Values.resources.%{camelName}.memory }}
-                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+                  memory: {{ $.Values.resources.%{camelName}.memory }}
+                  cpu: {{ $.Values.resources.%{camelName}.cpu }}
           tolerations:
             - key: role
               value: database
@@ -72,12 +79,13 @@ spec:
               - ReadWriteOnce
             resources:
               requests:
-                storage: {{ .Values.resources.%{camelName}.disk }}
-    {{- if eq (int .Values.resources.%{camelName}.replicas) 2 }}
+                storage: {{ $.Values.resources.%{camelName}.disk }}
+    {{ end }}
+    {{- if eq (len .Values.resources.%{camelName}.namedReplicas) 2 }}
     - name: tiebreaker
       count: 1
       config:
-        node.roles: [master, voting_only]
+        node.roles: [master, voting_only, remote_cluster_client]
       podTemplate:
         spec:
           initContainers:
