@@ -21,7 +21,7 @@ metadata:
 spec:
   # NOTE: we default to 7.x to allow compatibility with OpenSearch, but feel free to use 8.x
   # When changing the version here, also make the correspoding change to the Kibana instance.
-  version: 7.17.21
+  version: 7.17.25
   # Add an S3 credentials secret and uncomment this to enable S3 based snapshots via Kibana
   # secureSettings:
   #   - secretName: elasticsearch-s3-credentials
@@ -122,7 +122,7 @@ kind: Kibana
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
-  version: 7.17.21
+  version: 7.17.25
   count: 1
   http:
     tls:
