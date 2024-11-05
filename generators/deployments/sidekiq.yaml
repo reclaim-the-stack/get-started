@@ -37,9 +37,9 @@ spec:
         - name: sidekiq
           image: {{ .Values.image }}
           command:
-            - sh
-            - -c
-            - {{ .Values.deployments.%{camelName}.command | default "bundle exec sidekiq" }}
+            {{- range .Values.deployments.%{camelName}.command | default "bundle exec sidekiq" | split " " }}
+            - {{ . | quote }}
+            {{- end }}
           # NOTE: We avoid putting a limit on CPU since Kubernetes throttling kills performance and CPU averages
           # tends to be low, so we can allow some pods to burst when needed. Adjust as you see fit.
           resources:

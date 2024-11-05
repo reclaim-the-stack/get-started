@@ -37,9 +37,9 @@ spec:
         - name: command
           image: {{ .Values.image }}
           command:
-            - sh
-            - c
-            - {{ .Values.scaling.%{camelName}.command }}
+            {{- range .Values.deployments.%{camelName}.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
           # NOTE: We avoid putting a limit on CPU since Kubernetes throttling kills performance and CPU averages
           # tends to be low, so we can allow some pods to burst when needed. Adjust as you see fit.
           resources:
