@@ -51,7 +51,11 @@ spec:
   bootstrap:
     initdb:
       database: {{ .Chart.Name }}
+      # The following statements ensure that we can create a replication slot and subscription
+      # on the database without involving the superuser. This is useful for logical replication
+      # for eg. major version upgrades.
       postInitSQL:
+        - ALTER ROLE "{{ .Chart.Name }}" WITH REPLICATION;
         - GRANT pg_create_subscription TO "{{ .Chart.Name }}";
   postgresql:
     parameters:
