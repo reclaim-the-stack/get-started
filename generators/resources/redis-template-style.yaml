@@ -1,0 +1,484 @@
+# Creates a Sentinel cluster and a Redis cluster and a Service routing
+# to current master instance. Master / slave roles are determined by
+# pod labels which are assigned via sidecar containers running kubectl
+# with a custom RBAC setup to allow patching pods.
+#
+# The Sentinel cluster will always have 3 replicas, the Redis cluster will
+# have a StatefulSet per named replica with 1 replica each. The reason for
+# multiple StatefulSets is to allow full control over which replica is removed
+# when scaling down.
+#
+# Example values.yaml:
+# resources:
+#   %{camelName}:
+#     namedReplicas:
+#       - foo
+#       - bar
+#     memory: 100Mi # must use Gi or Mi format
+#     cpu: 250m
+#     disk: 500Mi
+# env:
+#   - { name: REDIS_URL, value: redis://%{application}%{suffix}-redis-master.default.svc:6379 }
+#   # NOTE: Redis clients do not support SENTINEL_URL out of the box, you'll have to write your own
+#   # initialization logic. We recommend using it instead of REDIS_URL for 0 downtime failovers.
+#   - { name: SENTINEL_URL, value: redis-sentinel://%{application}%{suffix}-sentinel:26379/%{application}%{suffix} }
+
+{{- $chartName := print .Chart.Name "%{suffix}" -}}
+{{- $sentinelName := print $chartName "-sentinel" }}
+# Create one StatefulSet per named replica
+{{- range .Values.resources.%{camelName}.namedReplicas }}
+{{- $replicaName := print $chartName "-redis-" . }}
+# The StatefulSet for the Redis replica
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $replicaName }}
+spec:
+  serviceName:  {{ $replicaName }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  {{ $replicaName }}
+  template:
+    metadata:
+      labels:
+        app:  {{ $replicaName }}
+        redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+        redis.reclaim-the-stack.com/name: {{ $replicaName }}
+        redis.reclaim-the-stack.com/component: redis
+    spec:
+      serviceAccountName: {{ $sentinelName }}
+      initContainers:
+        {{- $maxmemory := $.Values.resources.%{camelName}.memory }}
+        {{- if hasSuffix "Gi" $maxmemory }}
+          {{- $maxmemory = trimSuffix "Gi" $maxmemory | mulf 1074 }}
+        {{- else if hasSuffix "Mi" $maxmemory }}
+          {{- $maxmemory = trimSuffix "Mi" $maxmemory | mulf 1.049 | int }}
+        {{- else }}
+          {{- fail "resources.%{camelName}.memory must use Gi or Mi format" }}
+        {{- end }}
+        - name: config
+          image: redis:7.4
+          command: [ "sh", "-c" ]
+          args:
+            - |
+              cat << EOF > /config/redis.conf
+              port 6379
+              replica-announce-ip $(hostname).{{ $replicaName }}
+              maxmemory {{ $maxmemory }}mb
+
+              # Enable append only file persistence with every second fsync like on Heroku's HA plans
+              appendonly yes
+              appendfilename "appendonly.aof"
+              appendfsync everysec
+
+              EOF
+
+              echo "Finding master..."
+              HOST={{ $replicaName }}-0.{{ $replicaName }}
+              SENTINEL_HOST={{ $chartName }}-sentinel
+
+              if [ "$(timeout 1 redis-cli -h $SENTINEL_HOST -p 26379 PING)" != "PONG" ]; then
+                echo "Unable to connect to sentinel, defaulting to first named replica"
+                MASTER_NAME={{ $.Values.resources.redis.namedReplicas | first }}
+                MASTER="{{ $chartName }}-redis-$MASTER_NAME-0.{{ $chartName }}-redis-$MASTER_NAME"
+              else
+                echo "Sentinel found, finding master"
+                MASTER="$(timeout 1 redis-cli -h $SENTINEL_HOST -p 26379 SENTINEL GET-MASTER-ADDR-BY-NAME {{ $chartName }} | head -n 1)"
+
+                if [ "$MASTER" = "" ]; then
+                  echo "No master found on sentinel, exceptional state, aborting"
+                  exit 1
+                fi
+              fi
+
+              if [ "$HOST" = "$MASTER" ]; then
+                echo "I am the master, not updating config..."
+                touch /config/master-at-startup
+              else
+                echo "Adding 'replicaof $MASTER 6379' to redis.conf..."
+                echo "replicaof $MASTER 6379" >> /config/redis.conf
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+        - name: kubectl
+          image: bitnami/kubectl:1.30.7
+          command: ["sh", "-c"]
+          args:
+            - |
+              if [ -f /config/master-at-startup ]; then
+                echo "I am the master, setting label..."
+                kubectl label pod {{ $replicaName }}-0 redis.reclaim-the-stack.com/role=master --overwrite
+              else
+                echo "I am a slave, setting label..."
+                kubectl label pod {{ $replicaName }}-0 redis.reclaim-the-stack.com/role=slave --overwrite
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      containers:
+        - name: redis
+          image: redis:7.4
+          command: ["redis-server"]
+          args: ["/config/redis.conf"]
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: {{ $.Values.resources.%{camelName}.cpu }}
+              memory: {{ $.Values.resources.%{camelName}.memory }}
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name:  {{ $replicaName }}-data
+              mountPath: /data
+        - name: redis-exporter
+          image: quay.io/oliver006/redis_exporter:v1.62.0
+          ports:
+            - name: metrics
+              containerPort: 9121
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 30Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: config
+          emptyDir: {}
+      tolerations:
+        - key: role
+          value: database
+          effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/database: ""
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+  volumeClaimTemplates:
+    - metadata:
+        name:  {{ $replicaName }}-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ $.Values.resources.%{camelName}.disk }}
+---
+# The headless service for the Redis replicas
+apiVersion: v1
+kind: Service
+metadata:
+  name:  {{ $replicaName }}
+  labels:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/name: {{ $replicaName }}
+    redis.reclaim-the-stack.com/component: redis
+spec:
+  clusterIP: None
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  - port: 9121
+    targetPort: 9121
+    name: metrics
+  selector:
+    app:  {{ $replicaName }}
+---
+{{- end }}
+# The StatefulSet for the Redis sentinel replicas
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $sentinelName }}
+spec:
+  serviceName: {{ $sentinelName }}
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ $sentinelName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $sentinelName }}
+        redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+        redis.reclaim-the-stack.com/component: sentinel
+    spec:
+      serviceAccountName: {{ $sentinelName }}
+      tolerations:
+        - key: role
+          value: database
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: {{ $sentinelName }}
+      initContainers:
+        - name: config
+          image: redis:7.4.0
+          command: [ "bash", "-c" ]
+          args:
+            - |
+              cat << 'EOF' > /config/client-reconfig-script.sh
+              #!/bin/bash
+
+              # CLIENTS RECONFIGURATION SCRIPT
+              #
+              # SENTINEL CLIENT-RECONFIG-SCRIPT <master-name> <script-path>
+              #
+              # When the master changed because of a failover a script can be called in
+              # order to perform application-specific tasks to notify the clients that the
+              # configuration has changed and the master is at a different address.
+              #
+              # The following arguments are passed to the script:
+              #
+              # <1:master-name> <2:role> <3:state> <4:from-ip> <5:from-port> <6:to-ip> <7:to-port>
+              #
+              # <state> is currently always "start"
+              # <role> is either "leader" or "observer"
+              #
+              # The arguments from-ip, from-port, to-ip, to-port are used to communicate
+              # the old address of the master and the new address of the elected replica
+              # (now a master).
+              #
+              # This script should be resistant to multiple invocations.
+
+              # NOTE: $4 and $6 are hostnames, not IPs, eg. "<chart-name>-redis-foo-0.<service-name>"
+              # Hence /.* is used to strip the service name and so end up with the name of the pod.
+              echo "${6/.*}" > /config/current-master
+              EOF
+              chmod +x /config/client-reconfig-script.sh
+
+              cat << EOF > /config/sentinel.conf
+              port 26379
+              sentinel announce-hostnames yes
+              sentinel resolve-hostnames yes
+              sentinel announce-ip $(hostname).{{ $sentinelName }}
+              sentinel client-reconfig-script {{ $chartName }} /config/client-reconfig-script.sh
+
+              EOF
+
+              # Attempt to find the master via sentinels
+
+              echo "Finding master..."
+              SENTINEL_MASTER=$(timeout 2 redis-cli -h {{ $chartName }}-sentinel -p 26379 SENTINEL GET-MASTER-ADDR-BY-NAME {{ $chartName }} | head -n 1)
+
+              # TODO: this comment
+              # Attempt to find the master via redis replicas
+
+              # eg. "<chart-name>-redis-foo-0.<chart-name> <chart-name>-redis-bar-0.<chart-name> <chart-name>-redis-baz-0.<chart-name>"
+              {{- $hosts := "" }}
+              {{- range $.Values.resources.%{camelName}.namedReplicas }}
+              {{- $replicaName := print $chartName "-redis-" . }}
+              {{- $hosts = print $hosts $replicaName "-0." $replicaName " " }}
+              {{- end }}
+              NAMED_REPLICA_HOSTS="{{ $hosts }}"
+
+              for REPLICA_HOST in $NAMED_REPLICA_HOSTS
+              do
+                if [ "$SENTINEL_MASTER" = "" ]; then
+                  echo "checking role for $REPLICA_HOST"
+                  ROLE=$(timeout 1 redis-cli -h $REPLICA_HOST ROLE | head -n 1)
+                  if [ $ROLE = "master" ]; then
+                    echo "$REPLICA_HOST is a master"
+                    echo $REPLICA_HOST >> /tmp/master
+                  elif [ $ROLE = "slave" ]; then
+                    echo "$REPLICA_HOST is a slave"
+                    echo $REPLICA_HOST >> /tmp/slaves
+                  else
+                    echo "unknown role for $REPLICA_HOST, assuming slave"
+                    echo $REPLICA_HOST >> /tmp/slaves
+                  fi
+                else
+                  echo "setting role via sentinel"
+                  if [ "$SENTINEL_MASTER" = "$REPLICA_HOST" ]; then
+                    echo "$REPLICA_HOST is a master"
+                    echo $REPLICA_HOST >> /tmp/master
+                  else
+                    echo "$REPLICA_HOST is a slave"
+                    echo $REPLICA_HOST >> /tmp/slaves
+                  fi
+                fi
+              done
+
+              if [ ! -f /tmp/master ]; then
+                # Eg. If there were network errors or failover issues we may not have found a master
+
+                echo "no master found, defaulting to first slave"
+                MASTER=$(head -n 1 /tmp/slaves)
+                # cut the line from slaves file
+                sed -i 1d /tmp/slaves
+              elif [ $(wc -l < /tmp/master) -gt 1 ]; then
+                # Eg. if there was a failover race condition and we found multiple masters
+
+                echo "multiple masters found, defaulting to first"
+                MASTER=$(head -n 1 /tmp/master)
+                # insert the remaining masters back into the slaves file
+                tail -n +2 /tmp/master >> /tmp/slaves
+              else
+                MASTER=$(cat /tmp/master)
+              fi
+
+              # strip service name and put into current-master file
+              echo "${MASTER/.*}" > /config/current-master
+              echo "sentinel monitor {{ $chartName }} $MASTER 6379 2" >> /config/sentinel.conf
+
+              for REPLICA_HOST in $(cat /tmp/slaves)
+              do
+                echo "sentinel known-slave {{ $chartName }} $REPLICA_HOST 6379" >> /config/sentinel.conf
+              done
+
+              echo "sentinel down-after-milliseconds {{ $chartName }} 5000
+              sentinel failover-timeout {{ $chartName }} 10000
+              " >> /config/sentinel.conf
+          volumeMounts:
+            - name: config
+              mountPath: /config/
+      containers:
+        - name: sentinel
+          image: redis:7.4.0
+          command: ["redis-server"]
+          args: ["/config/sentinel.conf", "--sentinel"]
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "-p", "26379", "ping"]
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+          ports:
+            - containerPort: 26379
+              name: redis-sentinel
+          volumeMounts:
+            - name: config
+              mountPath: /config/
+        - name: kubectl
+          image: bitnami/kubectl:1.30.7
+          command: ["sh", "-c"]
+          args:
+            - |
+              # TODO: Graceful shutdown
+              trap 'exit 0' TERM
+
+              echo "Starting loop waiting for /config/current-master file..."
+              while true; do
+                while [ ! -f "/config/current-master" ]; do
+                  sleep 0.1
+                done
+
+                CURRENT_MASTER=$(cat /config/current-master)
+                echo "New master elected: $CURRENT_MASTER - updating pod labels..."
+                {{ range $.Values.resources.%{camelName}.namedReplicas }}
+                {{- $replicaName := print $chartName "-redis-" . "-0" }}
+                if [ "$CURRENT_MASTER" = "{{ $replicaName }}" ]; then
+                  echo "Setting {{ $replicaName }} as master"
+                  kubectl label pod {{ $replicaName }} redis.reclaim-the-stack.com/role=master --overwrite
+                else
+                  echo "Setting {{ $replicaName }} as slave"
+                  kubectl label pod {{ $replicaName }} redis.reclaim-the-stack.com/role=slave --overwrite
+                fi
+                {{- end }}
+
+                rm /config/current-master
+              done
+          volumeMounts:
+            - name: config
+              mountPath: /config/
+      volumes:
+        - name: config
+          emptyDir: {}
+---
+# Headless service of the sentinel cluster, integrates via serviceName in the StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $sentinelName }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ $sentinelName }}
+  ports:
+    - port: 26379
+      name: redis-sentinel
+---
+# The following resources add RBAC to allow the sentinel cluster to run kubectl and label the master pod
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $sentinelName }}
+  labels:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/component: sentinel
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $sentinelName }}
+  labels:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/component: sentinel
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $sentinelName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $sentinelName }}
+    namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $sentinelName }}
+  labels:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/component: sentinel
+---
+# Service for the current master pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $chartName }}-redis-master
+  labels:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/component: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+  selector:
+    redis.reclaim-the-stack.com/cluster: {{ $chartName }}
+    redis.reclaim-the-stack.com/role: master
