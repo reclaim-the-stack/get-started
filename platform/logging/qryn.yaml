@@ -4,7 +4,7 @@ metadata:
   name: qryn
   namespace: logging
 spec:
-  replicas: 1 # # TODO: Increase to 2+ for HA
+  replicas: 1 # TODO: Increase to 2+ for HA
   selector:
     matchLabels:
       app: qryn
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/metrico/qryn:3.2.22-bun
+          image: ghcr.io/metrico/qryn:3.2.37-bun
           ports:
             - containerPort: 3100
           resources:
@@ -29,6 +29,11 @@ spec:
               value: clickhouse-qryn
             - name: CLICKHOUSE_AUTH
               value: qryn:qryn
+            # Configure these to set how long you want to keep logs for:
+            - name: LABELS_DAYS
+              value: "30"
+            - name: SAMPLES_DAYS
+              value: "30"
 ---
 apiVersion: v1
 kind: Service
