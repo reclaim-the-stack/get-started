@@ -80,7 +80,7 @@ spec:
 
               if [ "$(timeout 1 redis-cli -h $SENTINEL_HOST -p 26379 PING)" != "PONG" ]; then
                 echo "Unable to connect to sentinel, defaulting to first named replica"
-                MASTER_NAME={{ $.Values.resources.redis.namedReplicas | first }}
+                MASTER_NAME={{ $.Values.resources.%{camelName}.namedReplicas | first }}
                 MASTER="{{ $chartName }}-redis-$MASTER_NAME-0.{{ $chartName }}-redis-$MASTER_NAME"
               else
                 echo "Sentinel found, finding master"
