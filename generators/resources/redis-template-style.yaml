@@ -17,6 +17,7 @@
 #     memory: 100Mi # must use Gi or Mi format
 #     cpu: 250m
 #     disk: 500Mi
+#     policy: noeviction # default, see https://redis.io/docs/latest/develop/reference/eviction/
 # env:
 #   - { name: REDIS_URL, value: redis://%{application}%{suffix}-redis-master.default.svc:6379 }
 #   # NOTE: Redis clients do not support SENTINEL_URL out of the box, you'll have to write your own
@@ -66,6 +67,7 @@ spec:
               port 6379
               replica-announce-ip $(hostname).{{ $replicaName }}
               maxmemory {{ $maxmemory }}mb
+              maxmemory-policy {{ $.Values.resources.%{camelName}.policy | default "noeviction" }}
 
               # Enable append only file persistence with every second fsync like on Heroku's HA plans
               appendonly yes
