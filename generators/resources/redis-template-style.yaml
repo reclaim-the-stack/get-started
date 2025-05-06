@@ -305,10 +305,10 @@ spec:
                 if [ "$SENTINEL_MASTER" = "" ]; then
                   echo "checking role for $REPLICA_HOST"
                   ROLE=$(timeout 1 redis-cli -h $REPLICA_HOST ROLE | head -n 1)
-                  if [ $ROLE = "master" ]; then
+                  if [ "$ROLE" = "master" ]; then
                     echo "$REPLICA_HOST is a master"
                     echo $REPLICA_HOST >> /tmp/master
-                  elif [ $ROLE = "slave" ]; then
+                  elif [ "$ROLE" = "slave" ]; then
                     echo "$REPLICA_HOST is a slave"
                     echo $REPLICA_HOST >> /tmp/slaves
                   else
