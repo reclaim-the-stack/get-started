@@ -7,7 +7,7 @@ helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
     releaseName: cloudnative-pg
-    version: 0.22.1 # CloudnativePG version 1.24.1
+    version: 0.23.2 # CloudnativePG version 1.25.1
     namespace: cnpg-system
     valuesInline:
       monitoring:
