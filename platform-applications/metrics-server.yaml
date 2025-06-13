@@ -8,7 +8,7 @@ spec:
   source:
     chart: metrics-server
     repoURL: https://kubernetes-sigs.github.io/metrics-server/
-    targetRevision: 3.12.1 # metrics-server v0.7.1
+    targetRevision: 3.12.2 # metrics-server v0.7.2
     helm:
       parameters:
         - name: replicas
