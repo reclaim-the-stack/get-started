@@ -1,6 +1,14 @@
 # Reclaim the Stack: Get Started
 
-Before proceeding fork and clone this repository. Then search and replace `https://github.com/<your-github-user>/<your-repo-name>.git` with the URL of your fork and commit + push the change.
+Before proceeding fork and clone this repository.
+
+If you have `gh` CLI installed you can do it with:
+
+```
+gh repo fork https://github.com/reclaim-the-stack/get-started --clone && cd get-started
+```
+
+Then search and replace `https://github.com/<your-github-user>/<your-repo-name>.git` with the URL of your fork and commit + push the change.
 
 The following script will do the search+replace for you provided that you cloned your fork via the https protocol:
 
