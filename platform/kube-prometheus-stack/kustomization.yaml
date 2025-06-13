@@ -5,11 +5,11 @@ helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
     releaseName: monitoring
-    # Version upgrade notes at:
+    # Version upgrade notes and container image versions at:
     # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
     # Version changelogs at:
     # https://github.com/prometheus-community/helm-charts/releases
-    version: 67.3.1 # operator version 0.79.2 / prometheus version 3.0.1
+    version: 74.0.0 # operator version 0.83.0 / prometheus version 3.4.1 / grafana version 12.0.1
     namespace: monitoring
     includeCRDs: true
     valuesInline:
