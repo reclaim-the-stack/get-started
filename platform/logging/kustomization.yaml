@@ -8,7 +8,7 @@ helmCharts:
   - name: promtail
     repo: https://grafana.github.io/helm-charts
     # Changelog at https://github.com/grafana/loki/blob/main/CHANGELOG.md
-    version: 6.16.0 # promtail version 3.0.0
+    version: 6.17.0 # app version 3.5.1
     releaseName: promtail # without this pods are named release-name
     namespace: logging
     valuesInline:
@@ -21,12 +21,12 @@ helmCharts:
         clients:
           - url: http://qryn:3100/loki/api/v1/push
 
-  # Host OS logs
+  # Talos Linux host OS logs
   # - name: vector
   #   repo: https://helm.vector.dev
   #   releaseName: vector
   #   # Changelogs at https://vector.dev/releases/
-  #   version: 0.32.0 # vector version 0.37.0
+  #   version: 0.43.0 # vector version 0.47.0
   #   namespace: logging
   #   valuesInline:
   #     role: "Agent"
