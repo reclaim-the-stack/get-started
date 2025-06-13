@@ -8,7 +8,8 @@ spec:
   source:
     chart: altinity-clickhouse-operator
     repoURL: https://docs.altinity.com/clickhouse-operator/
-    targetRevision: 0.25.0 # app version 0.25.0
+    # NOTE: Not upgrading until https://github.com/Altinity/clickhouse-operator/issues/1714 is resolved
+    targetRevision: 0.24.0
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
