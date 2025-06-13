@@ -60,3 +60,4 @@ data:
     |
     jsonPointers:
       - /spec/names/shortNames
+      - /spec/preserveUnknownFields
