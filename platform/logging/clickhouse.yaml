@@ -7,34 +7,34 @@ spec:
   defaults:
     templates:
       dataVolumeClaimTemplate: data-volume-template
-      logVolumeClaimTemplate: log-volume-template
-      serviceTemplate: chi-service-template
+      podTemplate: pod-template
   configuration:
+    settings:
+      logger/level: information
     users:
       qryn/password: qryn
       qryn/networks/ip: 0.0.0.0
       qryn/networks/host_regexp: .*
     clusters:
-      - name: qryn
+      - name: default
         secret:
           auto: "true"
         layout:
           shardsCount: 1
-          replicasCount: 1 # TODO: Increase to 2+ for HA
+          replicasCount: 1 # TODO: Increase to 2+ and enable zookeeper for HA
+    # zookeeper:
+    #   nodes:
+    #   - host: keeper-qryn
   templates:
-    serviceTemplates:
-      - name: chi-service-template
-        generateName: clickhouse-{chi}
+    podTemplates:
+      - name: pod-template
         spec:
-          type: ClusterIP
-          ClusterIP: None
-          ports:
-            - name: http
-              port: 8123
-            - name: tcp
-              port: 9000
-            - name: interserver
-              port: 9009
+          tolerations:
+            - key: role
+              value: database
+              effect: NoSchedule
+          nodeSelector:
+            node-role.kubernetes.io/database: ""
     volumeClaimTemplates:
       - name: data-volume-template
         spec:
@@ -43,10 +43,47 @@ spec:
           resources:
             requests:
               storage: 1Gi
-      - name: log-volume-template
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 100Mi
+# ---
+# apiVersion: clickhouse-keeper.altinity.com/v1
+# kind: ClickHouseKeeperInstallation
+# metadata:
+#   name: qryn
+#   namespace: logging
+# spec:
+#   defaults:
+#     templates:
+#       dataVolumeClaimTemplate: default
+#       podTemplate: default
+#   configuration:
+#     clusters:
+#       - name: default
+#         layout:
+#           replicasCount: 3
+#   templates:
+#     volumeClaimTemplates:
+#       - name: default
+#         spec:
+#           accessModes:
+#             - ReadWriteOnce
+#           resources:
+#             requests:
+#               storage: 10Gi
+#     podTemplates:
+#       - name: default
+#         spec:
+#           nodeSelector:
+#             node-role.kubernetes.io/database: ""
+#           tolerations:
+#             - key: role
+#               value: database
+#               effect: NoSchedule
+#           affinity:
+#             podAntiAffinity:
+#               requiredDuringSchedulingIgnoredDuringExecution:
+#                 - labelSelector:
+#                     matchExpressions:
+#                       - key: clickhouse-keeper.altinity.com/chk
+#                         operator: In
+#                         values:
+#                           - qryn
+#                   topologyKey: kubernetes.io/hostname
