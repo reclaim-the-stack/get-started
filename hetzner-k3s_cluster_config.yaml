@@ -1,0 +1,48 @@
+# Example cluster for Reclaim the Stack on Hetzner Cloud
+# brew install kubectl helm yq
+# brew install vitobotta/tap/hetzner_k3s
+# hetzner_k3s cluster create -c hetzner-k3s_cluster_config.yaml
+
+hetzner_token: <HETZNER-TOKEN>
+cluster_name: reclaim-the-stack
+kubeconfig_path: ./kubeconfig  # or /cluster/kubeconfig if you are going to use Docker
+k3s_version: v1.32.0+k3s1
+protect_against_deletion: false
+
+networking:
+  ssh:
+    port: 22
+    use_agent: false
+    public_key_path: ~/.ssh/id_rsa.pub
+    private_key_path: ~/.ssh/id_rsa
+  allowed_networks:
+    ssh:
+      - 0.0.0.0/0
+    api:
+      - 0.0.0.0/0
+
+masters_pool:
+  instance_type: cpx21
+  instance_count: 1
+  locations:
+    - hel1
+
+worker_node_pools:
+  - name: workers
+    instance_type: cpx21
+    instance_count: 3
+    location: hel1
+    # labels:
+    #   - key: node-role.kubernetes.io/worker
+    #     value: ""
+  - name: databases
+    instance_type: cpx31
+    instance_count: 3
+    location: hel1
+    # labels:
+    #   - key: node-role.kubernetes.io/database
+    #     value: ""
+    taints:
+      - key: role
+        value: database
+        effect: NoSchedule
