@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qryn
+  name: gigapipe
   namespace: logging
 spec:
   replicas: 1 # TODO: Increase to 2+ for HA
   selector:
     matchLabels:
-      app: qryn
+      app: gigapipe
   template:
     metadata:
       labels:
-        app: qryn
+        app: gigapipe
     spec:
       containers:
         - name: web
-          image: ghcr.io/metrico/qryn:3.2.37-bun
+          image: ghcr.io/metrico/gigapipe:v4.1.0
           ports:
             - containerPort: 3100
           resources:
@@ -26,9 +26,9 @@ spec:
               memory: 1Gi
           env:
             - name: CLICKHOUSE_SERVER
-              value: clickhouse-qryn
+              value: clickhouse-gigapipe.logging.svc.cluster.local
             - name: CLICKHOUSE_AUTH
-              value: qryn:qryn
+              value: gigapipe:gigapipe
             # Configure these to set how long you want to keep logs for:
             - name: LABELS_DAYS
               value: "30"
@@ -38,7 +38,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: qryn
+  name: gigapipe
   namespace: logging
 spec:
   type: ClusterIP
@@ -47,4 +47,4 @@ spec:
       targetPort: 3100
       protocol: TCP
   selector:
-    app: qryn
+    app: gigapipe

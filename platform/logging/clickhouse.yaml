@@ -1,7 +1,7 @@
 apiVersion: clickhouse.altinity.com/v1
 kind: ClickHouseInstallation
 metadata:
-  name: qryn
+  name: gigapipe
   namespace: logging
 spec:
   defaults:
@@ -12,9 +12,9 @@ spec:
     settings:
       logger/level: information
     users:
-      qryn/password: qryn
-      qryn/networks/ip: 0.0.0.0
-      qryn/networks/host_regexp: .*
+      gigapipe/password: gigapipe
+      gigapipe/networks/ip: 0.0.0.0
+      gigapipe/networks/host_regexp: .*
     clusters:
       - name: default
         secret:
@@ -24,7 +24,7 @@ spec:
           replicasCount: 1 # TODO: Increase to 2+ and enable zookeeper for HA
     # zookeeper:
     #   nodes:
-    #   - host: keeper-qryn
+    #   - host: keeper-gigapipe
   templates:
     podTemplates:
       - name: pod-template
@@ -47,7 +47,7 @@ spec:
 # apiVersion: clickhouse-keeper.altinity.com/v1
 # kind: ClickHouseKeeperInstallation
 # metadata:
-#   name: qryn
+#   name: gigapipe
 #   namespace: logging
 # spec:
 #   defaults:
@@ -85,5 +85,5 @@ spec:
 #                       - key: clickhouse-keeper.altinity.com/chk
 #                         operator: In
 #                         values:
-#                           - qryn
+#                           - gigapipe
 #                   topologyKey: kubernetes.io/hostname
