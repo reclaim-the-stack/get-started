@@ -77,11 +77,11 @@ helmCharts:
           - name: Logging
             uid: loki
             type: loki
-            url: http://qryn.logging.svc:3100
+            url: http://gigapipe.logging.svc.cluster.local:3100
           - name: linkerd
             uid: linkerd
             type: prometheus
-            url: http://prometheus.linkerd-viz.svc:9090
+            url: http://prometheus.linkerd-viz.svc.cluster.local:9090
 
       prometheus-node-exporter:
         prometheus:
