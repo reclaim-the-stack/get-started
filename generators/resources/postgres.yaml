@@ -1,9 +1,5 @@
 # Creates a Postgres cluster via the CloudNativePG PostgreSQL Operator.
 #
-# By default we create two users. One with the same name as the database which has
-# CREATE rights and one readonly user who is only allowed to SELECT. Feel free to
-# modify spec.users as you see fit.
-#
 # Example values.yaml:
 # resources:
 #   %{camelName}:
