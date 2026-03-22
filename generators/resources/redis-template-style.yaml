@@ -228,6 +228,7 @@ spec:
         redis.reclaim-the-stack.com/component: sentinel
     spec:
       serviceAccountName: {{ $sentinelName }}
+      publishNotReadyAddresses: true
       tolerations:
         - key: role
           value: database
