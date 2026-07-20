@@ -54,10 +54,10 @@ spec:
               resources:
                 requests:
                   memory: {{ .Values.resources.%{camelName}.memory }}
-                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+                  cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
                 limits:
                   memory: {{ .Values.resources.%{camelName}.memory }}
-                  cpu: {{ .Values.resources.%{camelName}.cpu }}
+                  cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
           tolerations:
             - key: role
               value: database
@@ -91,7 +91,7 @@ spec:
               resources:
                 requests:
                   memory: 1Gi
-                  cpu: 0.03
+                  cpu: 30m
                 limits:
                   memory: 1Gi
           tolerations:
