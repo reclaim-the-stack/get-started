@@ -3,6 +3,25 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 36df1f promtail -> vector migration (2026-07-20)
+
+- Label parity verified exactly: a VRL remap reproduces promtail's scheme
+  (app/component from pod labels with app.kubernetes.io/* fallbacks,
+  job=namespace/app, instance, container, filename, namespace, node_name,
+  pod, stream). Verified by diffing /loki/api/v1/labels and per-pod
+  /series output before and after cutover -- identical.
+- vector 0.57 gotchas: VRL rejects ?? on infallible path lookups (use
+  if-null fallbacks), and dynamic "*" label maps need
+  dangerously_allow_unconfined_template_resolution: true on the loki sink.
+  Disable the sink healthcheck -- gigapipe has no /ready endpoint.
+- **Gigapipe is near-realtime in steady state** (~3s write-to-queryable,
+  measured with a marker line; flush default BULK_MAX_AGE_MS=100).
+  However, immediately after a collector cutover -- when every stream
+  fingerprint is new -- query_range lagged /series by a couple of minutes
+  before converging. Treat brief post-cutover blindness as transient:
+  verify with a marker line and a poll loop, not a single query.
+- Footprint: ~15m CPU / ~196Mi RAM total across 7 vector agents.
+
 ## Run 36df1f linkerd migration (2026-07-20, stable-2.14.10 -> edge-26.5.1)
 
 - **The linkerd OSS stable channel is dead** — stable-2.14 was the last;

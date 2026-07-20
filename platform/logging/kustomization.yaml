@@ -4,24 +4,79 @@ resources:
   - ./gigapipe.yaml
 namespace: logging
 helmCharts:
-  # Promtail captures logs from all Kubernetes pods and pushes them in batches to Gigapipe
-  - name: promtail
-    repo: https://grafana.github.io/helm-charts
-    # Changelog at https://github.com/grafana/loki/blob/main/CHANGELOG.md
-    version: 6.17.1 # app version 3.5.1
-    releaseName: promtail # without this pods are named release-name
+  # Vector captures logs from all Kubernetes pods and pushes them to Gigapipe.
+  # It replaces the deprecated Promtail (EOL 2026) and emits the same log
+  # labels Promtail used to, so existing queries and dashboards keep working.
+  - name: vector
+    repo: https://helm.vector.dev
+    releaseName: vector # without this pods are named release-name
+    # Changelogs at https://vector.dev/releases/
+    version: 0.57.0 # vector version 0.57.0
     namespace: logging
     valuesInline:
+      role: "Agent"
+      service:
+        enabled: false
       tolerations:
         - effect: NoSchedule
           operator: Exists
         - effect: NoExecute
           operator: Exists
-      config:
-        clients:
-          - url: http://gigapipe.logging.svc.cluster.local:3100/loki/api/v1/push
+      customConfig:
+        data_dir: /vector-data-dir
+        sources:
+          kubernetes_logs:
+            type: kubernetes_logs
+        transforms:
+          kubernetes_logs_labelled:
+            type: remap
+            inputs:
+              - kubernetes_logs
+            # Reproduce the labels Promtail used to emit: app/component from
+            # pod labels (with app.kubernetes.io/* fallbacks), job as
+            # <namespace>/<app>, instance from app.kubernetes.io/instance
+            source: |
+              .labels = {
+                "namespace": .kubernetes.pod_namespace,
+                "pod": .kubernetes.pod_name,
+                "container": .kubernetes.container_name,
+                "node_name": .kubernetes.pod_node_name,
+                "filename": .file,
+                "stream": .stream,
+                "job": .kubernetes.pod_namespace
+              }
+              app = .kubernetes.pod_labels.app
+              if app == null { app = .kubernetes.pod_labels."app.kubernetes.io/name" }
+              if app != null {
+                .labels.app = app
+                .labels.job = string!(.kubernetes.pod_namespace) + "/" + string!(app)
+              }
+              component = .kubernetes.pod_labels.component
+              if component == null { component = .kubernetes.pod_labels."app.kubernetes.io/component" }
+              if component != null { .labels.component = component }
+              instance = .kubernetes.pod_labels."app.kubernetes.io/instance"
+              if instance != null { .labels.instance = instance }
+        sinks:
+          gigapipe:
+            type: loki
+            inputs:
+              - kubernetes_logs_labelled
+            endpoint: http://gigapipe.logging.svc.cluster.local:3100
+            encoding:
+              codec: text
+            out_of_order_action: accept
+            healthcheck:
+              enabled: false # gigapipe does not implement the loki /ready endpoint
+            # Required for the dynamic "*" label map below
+            dangerously_allow_unconfined_template_resolution: true
+            labels:
+              "*": |-
+                {{`{{ labels }}`}}
 
-  # Talos Linux host OS logs
+  # Talos Linux host OS logs can be shipped by adding the following sources /
+  # transforms / sinks to the vector customConfig above (requires
+  # podHostNetwork: true and the talos machine config to forward logs, see
+  # https://www.talos.dev/latest/talos-guides/configuration/logging/)
   # - name: vector
   #   repo: https://helm.vector.dev
   #   releaseName: vector
