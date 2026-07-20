@@ -52,6 +52,33 @@ Verification beyond the smoke test: when a run teaches you a check worth
 keeping (a failure mode the smoke test missed), append it to
 `agent/VERIFICATION.md` so future runs check it too.
 
+## Using the k CLI
+
+Add a per-run context once (pipe the prompt answers: context name
+`rts-<run-id>`, default registry, registry namespace `reclaimthestack` so
+rails-example image refs resolve to the official Docker Hub builds, default
+kubectl context):
+
+    KUBECONFIG=agent/runs/<run-id>/kubeconfig \
+      printf 'rts-<run-id>\n\nreclaimthestack\n\n' | k contexts:add <fork-url>
+
+Note: `contexts:add` also switches the machine's active context — switch back
+with `k contexts:use <previous>` if one was configured. Then switch k's
+internal clone (used for secrets/deploys) to the run branch:
+
+    git -C ~/.k/rts-<run-id> checkout run/<run-id>
+
+Prefix every subsequent invocation with the run's context and kubeconfig
+instead of switching contexts — this keeps concurrent use of other contexts
+(including by humans) safe:
+
+    KUBECONFIG=agent/runs/<run-id>/kubeconfig K_CONTEXT=rts-<run-id> k <command>
+
+`k generate deployment|resource <app> <type>` are non-interactive when the
+type argument is given. `k secrets:create` requires `$EDITOR` — point it at a
+script that writes the desired env YAML to the file it receives as `$1`.
+During teardown, remove the context again: `k contexts:remove rts-<run-id>`.
+
 ## Branch conventions (work happens on a fork)
 
 Upgrade testing happens on a fork of reclaim-the-stack/get-started. Keep
