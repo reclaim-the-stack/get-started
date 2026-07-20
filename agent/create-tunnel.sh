@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Headless replacement for the `cloudflared tunnel login` flow in the README.
-# Creates a Cloudflare tunnel named rts-<run-id> via the API, adds a wildcard
-# DNS record *.rts-<run-id>.$RTS_TEST_DOMAIN pointing at it, and seals the
-# tunnel credentials into platform/cloudflared/templates/tunnel-credentials.yaml.
+# Creates a Cloudflare tunnel named rts-<run-id> via the API, adds proxied DNS
+# records for the platform hostnames (argocd, grafana), and seals the tunnel
+# credentials into platform/cloudflared/templates/tunnel-credentials.yaml.
+# Add records for application hostnames later with agent/add-dns.sh.
 #
 # Requires the cluster to be up with the sealed-secrets controller running
 # (ie. after `kubectl create -f argocd-root.yaml` has synced).
@@ -36,16 +37,13 @@ TUNNEL_ID="$(
 jq -n --arg a "$CLOUDFLARE_ACCOUNT_ID" --arg s "$TUNNEL_SECRET" --arg t "$TUNNEL_ID" \
   '{AccountTag: $a, TunnelSecret: $s, TunnelID: $t}' > "$DIR/tunnel-credentials.json"
 
-cf_api POST "/zones/$CLOUDFLARE_ZONE_ID/dns_records" --data "$(
-  jq -n --arg name "*.$DOMAIN" --arg content "$TUNNEL_ID.cfargotunnel.com" \
-    '{type: "CNAME", name: $name, content: $content, proxied: true}'
-)" > /dev/null
+"$AGENT_DIR/add-dns.sh" "$RUN_ID" argocd grafana
 
 kubectl create secret generic tunnel-credentials --dry-run=client \
   --from-file=credentials.json="$DIR/tunnel-credentials.json" \
   -o yaml | kubeseal -o yaml > "$REPO_ROOT/platform/cloudflared/templates/tunnel-credentials.yaml"
 
-echo "Created tunnel $NAME ($TUNNEL_ID) with DNS *.$DOMAIN -> $TUNNEL_ID.cfargotunnel.com"
+echo "Created tunnel $NAME ($TUNNEL_ID) with argocd. and grafana. DNS records on $DOMAIN"
 echo "Sealed credentials written to platform/cloudflared/templates/tunnel-credentials.yaml"
 echo
 echo "Remaining manual steps from the README's cloudflared section:"

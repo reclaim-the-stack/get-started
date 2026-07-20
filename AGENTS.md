@@ -35,12 +35,14 @@ destroyed without local state.
 1. `agent/create-cluster.sh <run-id>` — Hetzner cluster up, node roles labeled,
    kubeconfig in `agent/runs/<run-id>/kubeconfig`
 2. Follow the README Installation section (ArgoCD, argocd-root)
-3. `agent/create-tunnel.sh <run-id>` — tunnel + wildcard DNS
-   `*.rts-<run-id>.$RTS_TEST_DOMAIN` + sealed credentials; finish the manual
-   steps it prints
+3. `agent/create-tunnel.sh <run-id>` — tunnel + DNS records for argocd and
+   grafana + sealed credentials; finish the manual steps it prints. Every
+   ingress hostname needs its own DNS record (`agent/add-dns.sh`) — explicit
+   records keep TLS working on any Cloudflare plan, wildcards would not
 4. Deploy https://github.com/reclaim-the-stack/rails-example with the
    [k CLI](https://github.com/reclaim-the-stack/k) per its README to exercise
-   Postgres, Redis and Elasticsearch
+   Postgres, Redis and Elasticsearch; add its hostname with
+   `agent/add-dns.sh <run-id> rails-example`
 5. `agent/smoke-test.sh <run-id>` — must pass before and after any upgrade work
 6. Upgrade iteration (see below)
 7. `agent/teardown.sh <run-id>` — **always run this before finishing**, even
