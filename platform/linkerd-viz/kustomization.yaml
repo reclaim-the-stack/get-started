@@ -4,9 +4,9 @@ resources:
   - ./webhook-issuer-secret.yaml
 helmCharts:
   - name: linkerd-viz
-    repo: https://helm.linkerd.io/stable
+    repo: https://helm.linkerd.io/edge
     releaseName: linkerd-viz
-    version: 30.12.11 # Linkerd version 2.14.10
+    version: 2026.5.1 # linkerd edge-26.5.1
     namespace: linkerd-viz
     valuesInline:
       tap:
