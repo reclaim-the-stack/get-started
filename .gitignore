@@ -1,1 +1,7 @@
 .DS_Store
+
+# Local credentials and cluster state -- never commit
+.env.local
+kubeconfig
+tunnel-credentials.json
+agent/runs/
