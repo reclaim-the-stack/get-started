@@ -21,8 +21,6 @@
 #       work_mem: 3276kB
 #       min_wal_size: 1GB
 #       max_wal_size: 4GB
-#       pg_stat_statements.max: "10000"
-#       pg_stat_statements.track: top
 # env:
 #   - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: %{application}%{suffix}-app, key: uri } } }
 
@@ -31,7 +29,7 @@ kind: Cluster
 metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
-  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4
   primaryUpdateStrategy: unsupervised
   enableSuperuserAccess: false
   instances: {{ .Values.resources.%{camelName}.replicas }}
@@ -41,7 +39,8 @@ spec:
       cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
     limits:
       memory: {{ .Values.resources.%{camelName}.memory }}
-      cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
+      # NOTE: no cpu limit to avoid throttling, see https://home.robusta.dev/blog/stop-using-cpu-limits
+      # cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
   storage:
     size: {{ .Values.resources.%{camelName}.disk }}
   bootstrap:
@@ -54,10 +53,9 @@ spec:
         - ALTER ROLE "{{ .Chart.Name }}" WITH REPLICATION;
         - GRANT pg_create_subscription TO "{{ .Chart.Name }}";
   postgresql:
-    parameters:
-      {{ .Values.resources.%{camelName}.config | toYaml | nindent 6 }}
-  monitoring:
-    enablePodMonitor: true
+    parameters: {{ .Values.resources.%{camelName}.config | toYaml | nindent 6 }}
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all
   affinity:
     tolerations:
       - key: role
@@ -69,24 +67,48 @@ spec:
           - matchExpressions:
               - key: node-role.kubernetes.io/database
                 operator: Exists
-# The following example uses S3-compatible storage for backups. Refer to the CloudnativePG
-# documentation for more details and options like Azure and Google Cloud Storage.
-#   backup:
-#     retentionPolicy: 30d
-#     barmanObjectStore:
-#       destinationPath: s3://<bucket-name>/cloudnativepg
-#       # endpointURL: https://<s3-compatible-host> # for non-AWS S3-compatible storage
-#       # Prepare this secret with: k secrets:create cloudnativepg-s3-credentials
-#       s3Credentials:
-#         accessKeyId:
-#           name: cloudnativepg-s3-credentials
-#           key: ACCESS_KEY_ID
-#         secretAccessKey:
-#           name: cloudnativepg-s3-credentials
-#           key: SECRET_ACCESS_KEY
-#       wal:
-#         compression: gzip
-#         maxParallel: 4
+# Uncomment the managed block and generate a sealed secret for the passwordSecret to enable readonly user
+#   managed:
+#     roles:
+#       - name: readonly
+#         login: true
+#         replication: true
+#         inRoles:
+#           - pg_read_all_data
+#           - pg_read_all_settings
+#           - pg_read_all_stats
+#         passwordSecret:
+#           name: {{ .Chart.Name }}-readonly
+# Uncomment the plugins block, ObjectStore resource, and ScheduledBackup resource to enable
+# WAL archiving and scheduled backups via the CNPG-I Barman Cloud Plugin (CloudNativePG 1.28+).
+# The plugin must be installed in the cluster first, see:
+# https://github.com/cloudnative-pg/plugin-barman-cloud
+#   plugins:
+#     - name: barman-cloud.cloudnative-pg.io
+#       isWALArchiver: true
+#       parameters:
+#         barmanObjectName: {{ .Chart.Name }}%{suffix}
+# ---
+# apiVersion: barmancloud.cnpg.io/v1
+# kind: ObjectStore
+# metadata:
+#   name: {{ .Chart.Name }}%{suffix}
+# spec:
+#   configuration:
+#     destinationPath: s3://<your-backup-bucket>/cloudnativepg
+#     # endpointURL: https://<your-s3-endpoint> # for non-AWS S3-compatible storage
+#     # Prepare this secret with: k secrets:create cloudnativepg-s3-credentials
+#     s3Credentials:
+#       accessKeyId:
+#         name: cloudnativepg-s3-credentials
+#         key: AWS_ACCESS_KEY_ID
+#       secretAccessKey:
+#         name: cloudnativepg-s3-credentials
+#         key: AWS_SECRET_ACCESS_KEY
+#     wal:
+#       compression: gzip
+#       maxParallel: 4
+#   retentionPolicy: 30d
 # ---
 # apiVersion: postgresql.cnpg.io/v1
 # kind: ScheduledBackup
@@ -97,3 +119,29 @@ spec:
 #   backupOwnerReference: self
 #   cluster:
 #     name: {{ .Chart.Name }}%{suffix}
+#   method: plugin
+#   pluginConfiguration:
+#     name: barman-cloud.cloudnative-pg.io
+# ---
+# CAUTION: Deploy the ObjectStore before deploying the initial backup or it may fail due to missing the plugin.
+# apiVersion: postgresql.cnpg.io/v1
+# kind: Backup
+# metadata:
+#   name: {{ .Chart.Name }}%{suffix}-initial
+# spec:
+#   cluster:
+#     name: {{ .Chart.Name }}%{suffix}
+#   method: plugin
+#   pluginConfiguration:
+#     name: barman-cloud.cloudnative-pg.io
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Chart.Name }}%{suffix}
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: {{ .Chart.Name }}%{suffix}
+  podMetricsEndpoints:
+    - port: metrics
