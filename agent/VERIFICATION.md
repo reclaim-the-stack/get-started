@@ -3,6 +3,19 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 36df1f (2026-07-20, second run; cluster kept for operator upgrade testing)
+
+- **`rails-example:latest` is a moving target.** The image was rebuilt between
+  two same-day runs (Sidekiq 7 -> 8), and Sidekiq 8 requires Redis 7+ while the
+  spotahome operator defaults to redis:6.2.6-alpine when the RedisFailover
+  spec has no image -- sidekiq crashlooped with "Sidekiq requires Redis 7.0.0
+  or greater". Fixed by pinning redis:7.4.9-alpine (redis + sentinel) in the
+  redis generator. When a deployment behaves differently between runs, check
+  whether the image tag moved (Docker Hub API shows `last_updated`).
+- Platform bootstrap + tunnel + smoke test needed zero manual intervention
+  this run — all run-0d0024 fixes (sealed-secrets URL, explicit DNS records,
+  ES quantity quoting, K_CONTEXT procedure) validated from scratch.
+
 ## Run 0d0024 (2026-07-20, first end-to-end run)
 
 - **Root/parent ArgoCD apps can be Healthy while a child app is broken.**
