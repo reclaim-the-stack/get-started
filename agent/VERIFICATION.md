@@ -3,6 +3,38 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 36df1f upgrade phase (2026-07-20, CNPG 1.26.0 -> 1.30.0, PG 17.5 -> 18.4)
+
+- **CNPG operator upgrade restarts every instance.** The 1.26 -> 1.30 jump
+  rolled the instance managers: replicas restarted first, then the primary
+  in-place ("Primary instance is being restarted without a switchover",
+  ~3.5 min with a brief write-unavailability window). Total ~4 min back to
+  healthy; data and app unaffected. Expect this on any operator bump.
+- **Declarative PG major upgrades work and are fast on small data.**
+  Changing imageName 17.5 -> 18.4 triggered CNPG's offline pg_upgrade path:
+  "Upgrading Postgres major version" (~4 min, cluster offline), primary up,
+  replica re-cloned, healthy at ~4.5 min. Data verified intact afterwards.
+  Watch `.status.phase` on the Cluster resource for the timeline.
+- **Switching enablePodMonitor -> explicit PodMonitor loses the monitor once.**
+  The operator deletes its auto-managed PodMonitor when the flag goes away,
+  taking the identically-named ArgoCD-created one with it; without selfHeal
+  the app then sits OutOfSync (Healthy). One manual sync fixes it — trigger
+  headless with:
+  `kubectl patch application <app> -n argocd --type merge -p '{"operation":{"sync":{"revision":"<branch>"}}}'`
+
+## Run 36df1f (2026-07-20, second run; cluster kept for operator upgrade testing)
+
+- **`rails-example:latest` is a moving target.** The image was rebuilt between
+  two same-day runs (Sidekiq 7 -> 8), and Sidekiq 8 requires Redis 7+ while the
+  spotahome operator defaults to redis:6.2.6-alpine when the RedisFailover
+  spec has no image -- sidekiq crashlooped with "Sidekiq requires Redis 7.0.0
+  or greater". Fixed by pinning redis:7.4.9-alpine (redis + sentinel) in the
+  redis generator. When a deployment behaves differently between runs, check
+  whether the image tag moved (Docker Hub API shows `last_updated`).
+- Platform bootstrap + tunnel + smoke test needed zero manual intervention
+  this run — all run-0d0024 fixes (sealed-secrets URL, explicit DNS records,
+  ES quantity quoting, K_CONTEXT procedure) validated from scratch.
+
 ## Run 0d0024 (2026-07-20, first end-to-end run)
 
 - **Root/parent ArgoCD apps can be Healthy while a child app is broken.**
