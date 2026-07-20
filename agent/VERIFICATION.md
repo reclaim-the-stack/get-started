@@ -27,11 +27,14 @@ covers. Append to this file when a run teaches you something the checks missed.
   node pools**; it crashloops with `No cluster config present provider: <nil>`.
   Workaround: `kubectl -n kube-system scale deployment cluster-autoscaler --replicas=0`.
   Worth reporting upstream to vitobotta/hetzner-k3s.
-- **Total TLS does not issue certs for wildcard DNS records.** A wildcard
-  record like `*.rts-<id>.<domain>` gets no edge cert (TLS handshake failure).
-  Options: per-hostname proxied records (works with DNS:Edit token permission,
-  certs issue in ~seconds) or an ACM certificate pack for the run wildcard
-  (needs Zone > SSL and Certificates > Edit on the API token).
+- **Total TLS issues wildcard certs SLOWLY.** A wildcard record like
+  `*.rts-<id>.<domain>` does get an edge cert, but issuance took somewhere
+  between 15 and 50 minutes on run 0d0024 — until then every hostname under
+  it fails TLS handshake. Specific proxied hostnames get their cert in
+  seconds. Don't conclude "wildcards unsupported" from an early handshake
+  failure (this run initially did). Recommended: wildcard record for apps
+  plus instant specific records for argocd/grafana so ingress verification
+  never blocks on wildcard issuance.
 - **End-to-end app verification**: agent/verify-rails-example.sh exercises
   Postgres (post create/read), Redis+Sidekiq (async link title resolution)
   and Elasticsearch (search) through the tunnel.
