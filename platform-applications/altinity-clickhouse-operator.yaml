@@ -9,6 +9,14 @@ spec:
     chart: altinity-clickhouse-operator
     repoURL: https://docs.altinity.com/clickhouse-operator/
     targetRevision: 0.27.1
+    helm:
+      parameters:
+        # The hook-based CRD install job is redundant under ArgoCD (CRDs from
+        # the chart's crds/ dir are already rendered and managed as resources)
+        # and its ConfigMaps exceed the 262KB annotation limit ArgoCD applies
+        # hooks with
+        - name: crdHook.enabled
+          value: "false"
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
