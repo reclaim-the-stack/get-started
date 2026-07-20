@@ -24,6 +24,7 @@ metadata:
   name: {{ .Chart.Name }}%{suffix}
 spec:
   sentinel:
+    image: redis:7.4.9-alpine
     replicas: {{ .Values.resources.%{camelName}.sentinels }}
     resources:
       requests:
@@ -41,6 +42,7 @@ spec:
           cpu: 200m
           memory: 100Mi
   redis:
+    image: redis:7.4.9-alpine
     replicas: {{ .Values.resources.%{camelName}.replicas }}
     # NOTE: We use native Redis maxmemory instead of Kubernetes resource limits to avoid OOM kills
     {{- $maxmemory := .Values.resources.%{camelName}.memory }}
