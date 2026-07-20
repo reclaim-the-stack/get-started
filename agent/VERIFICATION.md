@@ -14,10 +14,12 @@ covers. Append to this file when a run teaches you something the checks missed.
   if-null fallbacks), and dynamic "*" label maps need
   dangerously_allow_unconfined_template_resolution: true on the loki sink.
   Disable the sink healthcheck -- gigapipe has no /ready endpoint.
-- **Gigapipe has ~1-2 min ingest visibility lag** (ClickHouse insert
-  buffering): query_range returns nothing for very fresh lines while
-  /series and /labels already show them. Wait before concluding the
-  pipeline is broken.
+- **Gigapipe is near-realtime in steady state** (~3s write-to-queryable,
+  measured with a marker line; flush default BULK_MAX_AGE_MS=100).
+  However, immediately after a collector cutover -- when every stream
+  fingerprint is new -- query_range lagged /series by a couple of minutes
+  before converging. Treat brief post-cutover blindness as transient:
+  verify with a marker line and a poll loop, not a single query.
 - Footprint: ~15m CPU / ~196Mi RAM total across 7 vector agents.
 
 ## Run 36df1f linkerd migration (2026-07-20, stable-2.14.10 -> edge-26.5.1)
