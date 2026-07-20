@@ -3,6 +3,16 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 87e73f (2026-07-20, from-scratch validation of the upgraded stack)
+
+- Full from-scratch bootstrap of the post-upgrade master (17 platform apps
+  including linkerd edge-26.5.1, kube-prometheus-stack 87, vector, all
+  operator upgrades) completed with ZERO manual intervention beyond the
+  known hetzner-k3s cluster-autoscaler workaround. rails-example
+  provisioned PG 18.4 / Redis 7.4.9 / ES 7.17.29 first try; full e2e,
+  smoke test, and log pipeline marker checks green. Wall clock ~45 min
+  from empty Hetzner project to verified application.
+
 ## Run 36df1f promtail -> vector migration (2026-07-20)
 
 - Label parity verified exactly: a VRL remap reproduces promtail's scheme
