@@ -8,7 +8,6 @@ spec:
   source:
     chart: altinity-clickhouse-operator
     repoURL: https://docs.altinity.com/clickhouse-operator/
-    # NOTE: Not upgrading until https://github.com/Altinity/clickhouse-operator/issues/1714 is resolved
     targetRevision: 0.27.1
   destination:
     server: https://kubernetes.default.svc
@@ -16,3 +15,7 @@ spec:
   syncPolicy:
     automated:
       prune: true
+    syncOptions:
+      # Required since chart 0.25+: CRDs ship via PreSync hook ConfigMaps that
+      # exceed the 262KB client-side-apply annotation limit
+      - ServerSideApply=true
