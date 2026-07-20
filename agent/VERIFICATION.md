@@ -3,6 +3,20 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 36df1f linkerd migration (2026-07-20, stable-2.14.10 -> edge-26.5.1)
+
+- **The linkerd OSS stable channel is dead** — stable-2.14 was the last;
+  open source releases now ship on the edge channel only (helm repo
+  https://helm.linkerd.io/edge). Use releases marked "recommended" in the
+  GitHub release notes, per Mynewsdesk operational practice.
+- The 2.14 -> 26.5.1 jump synced cleanly in one step on a live mesh; meshed
+  workloads kept serving on old proxies until restarted (README process:
+  control plane, then viz, then rollout-restart all meshed workloads).
+  Meshed pods are found by looking for a linkerd-proxy container OR
+  initContainer (native sidecar mode moves it to initContainers).
+- installGatewayAPI defaults to false in current edge charts — no Gateway
+  API CRDs are required unless HTTPRoute policy is wanted.
+
 ## Run 36df1f upgrade batch 2 (2026-07-20, nine components)
 
 - **talosctl 1.13 restructured `cluster create`** into provisioner
