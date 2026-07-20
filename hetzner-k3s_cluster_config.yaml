@@ -4,6 +4,7 @@
 # hetzner-k3s create --config hetzner-k3s_cluster_config.yaml
 
 # hetzner_token: <HETZNER-TOKEN> # recommend using HCLOUD_TOKEN instead
+config_format_version: 1 # required as of hetzner-k3s 2.6.0
 cluster_name: reclaim-the-stack
 kubeconfig_path: ./kubeconfig  # or /cluster/kubeconfig if you are going to use Docker
 k3s_version: v1.36.2+k3s1

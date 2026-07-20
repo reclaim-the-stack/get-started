@@ -31,7 +31,9 @@ NAME="$(cluster_name "$RUN_ID")"
 
 echo "# Deleting Hetzner cluster $NAME..."
 generate_cluster_config "$RUN_ID"
-hetzner-k3s delete --config "$(run_dir "$RUN_ID")/cluster_config.yaml"
+# delete prompts for the cluster name as confirmation, even with
+# protect_against_deletion: false -- pipe it in to stay headless
+echo "$NAME" | hetzner-k3s delete --config "$(run_dir "$RUN_ID")/cluster_config.yaml"
 
 if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
   require_env CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_ZONE_ID RTS_TEST_DOMAIN
