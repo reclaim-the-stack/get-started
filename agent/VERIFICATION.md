@@ -5,6 +5,12 @@ covers. Append to this file when a run teaches you something the checks missed.
 
 ## Run 36df1f upgrade batch 2 (2026-07-20, nine components)
 
+- **talosctl 1.13 restructured `cluster create`** into provisioner
+  subcommands (`talosctl cluster create docker`) and renamed flags
+  (--cpus-controlplanes, --memory-controlplanes with GiB format,
+  --config-patch-workers). The v1.6-era README syntax prints usage help and
+  exits 0 -- validate README commands by running them, not by exit codes.
+
 - **altinity-clickhouse-operator chart 0.25+ CRD hooks break under ArgoCD.**
   The chart installs CRDs via PreSync hook ConfigMaps + a job; ArgoCD applies
   hooks client-side (app-level ServerSideApply does NOT cover hooks) and the
