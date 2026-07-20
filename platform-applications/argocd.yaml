@@ -21,3 +21,7 @@ spec:
     automated:
       allowEmpty: true
       prune: true
+    syncOptions:
+      # The ApplicationSet CRD exceeds the 262KB last-applied annotation
+      # limit under client-side apply
+      - ServerSideApply=true

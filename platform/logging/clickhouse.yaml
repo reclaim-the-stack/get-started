@@ -29,6 +29,10 @@ spec:
     podTemplates:
       - name: pod-template
         spec:
+          containers:
+            - name: clickhouse
+              # Pin explicitly: without this the operator deploys clickhouse-server:latest
+              image: clickhouse/clickhouse-server:26.6
           tolerations:
             - key: role
               value: database

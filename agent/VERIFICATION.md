@@ -3,6 +3,40 @@
 Checks and pitfalls discovered during test runs, beyond what smoke-test.sh
 covers. Append to this file when a run teaches you something the checks missed.
 
+## Run 36df1f upgrade batch 2 (2026-07-20, nine components)
+
+- **altinity-clickhouse-operator chart 0.25+ CRD hooks break under ArgoCD.**
+  The chart installs CRDs via PreSync hook ConfigMaps + a job; ArgoCD applies
+  hooks client-side (app-level ServerSideApply does NOT cover hooks) and the
+  CRD ConfigMaps exceed the 262KB annotation limit, wedging the sync on
+  "waiting for completion of hook". Fix: `crdHook.enabled: false` (CRDs are
+  already managed via helm template --include-crds) + ServerSideApply for the
+  big CRDs themselves.
+- **SSA can't switch a Deployment to `strategy: Recreate`** when the live
+  object has a defaulted rollingUpdate block ("Forbidden: may not be
+  specified"). Patch the live strategy first (remove rollingUpdate, set type)
+  or delete the deployment and let ArgoCD recreate it.
+- **Check stale upgrade-blocker comments against the upstream issue.** The
+  altinity manifest said "not upgrading until #1714" — that issue was fixed
+  in 0.25.1, a year before this run.
+- **Self-managed ArgoCD upgrades need SSA for the ApplicationSet CRD**
+  (also >262KB). And on ArgoCD 3.4.x, triggering a sync by patching
+  `.operation` does NOT inherit `spec.syncPolicy.syncOptions` — pass them
+  explicitly: `{"operation":{"sync":{"syncOptions":["ServerSideApply=true"]}}}`.
+- **Application manifests propagate via the `platform` app.** Changing
+  anything under platform-applications/ requires refreshing `platform` first,
+  then the target app. A watcher asserting only Synced/Healthy can pass
+  against the STALE spec — assert the new targetRevision/image too (this
+  batch's ECK watcher initially "passed" with the old operator running).
+  Also: app names don't always match file names (file
+  elastic-cloud-on-kubernetes.yaml -> app elastic-cloud-kubernetes-operator).
+- **Single-replica ClickHouse restarts briefly break gigapipe ingestion**
+  (transient "no such host" on the headless service during pod roll;
+  self-heals in <30s). HA would need replicas 2+ plus keeper.
+- kube-prometheus-stack 74 -> 87 (13 chart majors) applied cleanly in one
+  sync thanks to pre-existing ServerSideApply; Prometheus 3.13.1, 44 targets
+  up afterwards. ECK 3.0 -> 3.4.1 rolled in ~30s with ES green throughout.
+
 ## Run 36df1f upgrade phase (2026-07-20, CNPG 1.26.0 -> 1.30.0, PG 17.5 -> 18.4)
 
 - **CNPG operator upgrade restarts every instance.** The 1.26 -> 1.30 jump

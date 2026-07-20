@@ -9,7 +9,7 @@ helmCharts:
     # https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack
     # Version changelogs at:
     # https://github.com/prometheus-community/helm-charts/releases
-    version: 74.0.0 # operator version 0.83.0 / prometheus version 3.4.1 / grafana version 12.0.1
+    version: 87.17.0 # operator version 0.92.1
     namespace: monitoring
     includeCRDs: true
     valuesInline:
