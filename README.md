@@ -33,21 +33,21 @@ If you already have an empty Kubernetes cluster ready you can skip this part. Bu
 - Docker (eg. via [Docker Desktop](https://www.docker.com/products/docker-desktop/))
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 - [yq](https://github.com/mikefarah/yq#install)
-- [talosctl](https://www.talos.dev/v1.6/introduction/getting-started/#talosctl)
+- [talosctl](https://www.talos.dev/v1.13/introduction/getting-started/#talosctl)
 
 Now bootstrap a local Docker based Talos cluster with:
 
 ```
-talosctl cluster create \
+talosctl cluster create docker \
   --name reclaim-the-stack \
-  --image ghcr.io/siderolabs/talos:v1.6.7 \
-  --kubernetes-version 1.29.2 \
+  --image ghcr.io/siderolabs/talos:v1.13.6 \
+  --kubernetes-version 1.36.2 \
   --workers 1 \
-  --cpus "2.0" \
+  --cpus-controlplanes "2.0" \
   --cpus-workers "4.0" \
-  --memory 2048 \
-  --memory-workers 4096 \
-  --config-patch-worker @platform/talos-worker-patch.yaml
+  --memory-controlplanes 2GiB \
+  --memory-workers 4GiB \
+  --config-patch-workers @platform/talos-worker-patch.yaml
 ```
 
 When your cluster is up and running you can configure `kubectl` and `talosctl` to use it by:
