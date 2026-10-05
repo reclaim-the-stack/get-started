@@ -3,6 +3,9 @@ tunnel: reclaim-the-stack
 credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
+# Match ingress rules against the dot-segment-resolved path so a traversal can't make an Access-bypass
+# path rule capture a protected path (VULN-141859, default off as of 2026.10.0)
+disable-path-normalization: false
 # For more about ingress rules, see
 # https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/configuration/ingress
 # Applications would typically look like:
