@@ -1,6 +1,5 @@
 # Creates an OpenSearch cluster with an accompanying Dashboards instance.
-# Requires the opensearch-operator platform component, see the README. Move this file to
-# generators/resources/ to make it available to `k generate resource`.
+# Requires the opensearch-operator platform component, see the README.
 #
 # Example values.yaml:
 # resources:

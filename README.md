@@ -152,7 +152,7 @@ For events you need "just the `push` event".
 
 ### OpenSearch (optional)
 
-The [OpenSearch operator](https://reclaim-the-stack.com/docs/opensearch-operator/introduction) is disabled by default. An OpenSearch cluster needs at least 3 database nodes with 4Gi of memory to spare each, since every OpenSearch node runs on its own Kubernetes node. The Hetzner cluster from `hetzner-k3s_cluster_config.yaml` has enough, the local Docker cluster from this README doesn't.
+The [OpenSearch operator](https://reclaim-the-stack.com/docs/opensearch-operator/introduction) is disabled by default. An OpenSearch cluster needs at least 3 nodes labeled `node-role.kubernetes.io/database` with 4Gi of memory to spare each, since every OpenSearch node runs on its own Kubernetes node.
 
 Enable the `opensearch-operator` component of the stack, and the `k generate` template for OpenSearch clusters:
 

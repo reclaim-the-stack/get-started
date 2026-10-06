@@ -9,6 +9,15 @@ spec:
   groups:
     - name: opensearch
       rules:
+        # The other alerts rely on metrics scraped from the nodes, which a node that can't be scraped doesn't provide
+        - alert: OpenSearchNodeUnreachable
+          expr: up{container="opensearch", endpoint="http", service=~"opensearch-.+"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Prometheus can't scrape OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }}
+            description: The node is down or not responding, so the other OpenSearch alerts can't see it either.
         - alert: OpenSearchClusterRed
           expr: max by (namespace, cluster) (opensearch_cluster_status) == 2
           for: 5m
@@ -52,15 +61,18 @@ spec:
             description: Sustained heap pressure leads to long garbage collection pauses and tripped circuit breakers. Consider more memory (the heap is half of the memory limit) or more nodes.
         - alert: OpenSearchCircuitBreakerTripped
           expr: increase(opensearch_circuitbreaker_tripped_count[10m]) > 0
+          # Single trips during bursts aren't worth an alert, only ongoing ones
+          for: 10m
           labels:
             severity: warning
           annotations:
-            summary: The {{ $labels.name }} circuit breaker of OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} tripped
+            summary: The {{ $labels.name }} circuit breaker of OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} keeps tripping
             description: Requests were rejected to protect the node from running out of memory.
         - alert: OpenSearchThreadPoolRejections
           expr: increase(opensearch_threadpool_threads_count{type="rejected", name=~"search|write|get"}[10m]) > 0
+          for: 10m
           labels:
             severity: warning
           annotations:
-            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} rejected {{ $labels.name }} requests
+            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} keeps rejecting {{ $labels.name }} requests
             description: The {{ $labels.name }} thread pool's queue was full, so requests were rejected. The cluster may need more capacity.
