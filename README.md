@@ -161,7 +161,7 @@ mv platform-applications/disabled/opensearch-operator.yaml platform-applications
 mv generators/resources/disabled/opensearch.yaml generators/resources/
 ```
 
-To also get a Grafana dashboard and Prometheus alerts for your OpenSearch clusters, uncomment the `components` in `platform/opensearch-operator/kustomization.yaml`. The alerts only notify anyone once Alertmanager is enabled in `platform/kube-prometheus-stack/kustomization.yaml`, until then they show in Prometheus.
+To also get Prometheus alerts for your OpenSearch clusters, uncomment the `components` in `platform/opensearch-operator/kustomization.yaml`. The alerts only notify anyone once Alertmanager is enabled in `platform/kube-prometheus-stack/kustomization.yaml`, until then they show in Prometheus.
 
 Commit and push the changes:
 
@@ -171,7 +171,7 @@ git commit -m "Enable the OpenSearch operator"
 git push
 ```
 
-After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
+After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus and an OpenSearch dashboard for Grafana. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
 
 You can now add OpenSearch clusters to your applications with [k](https://github.com/reclaim-the-stack/k):
 
