@@ -1,0 +1,66 @@
+# Alerts for all OpenSearch clusters, based on the metrics the ServiceMonitor scrapes. Alertmanager has to be enabled
+# (see platform/kube-prometheus-stack/kustomization.yaml) for them to notify anyone, until then they show in Prometheus.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: opensearch
+  namespace: opensearch-operator
+spec:
+  groups:
+    - name: opensearch
+      rules:
+        - alert: OpenSearchClusterRed
+          expr: max by (namespace, cluster) (opensearch_cluster_status) == 2
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: OpenSearch cluster {{ $labels.namespace }}/{{ $labels.cluster }} is red
+            description: At least one primary shard is unassigned, so some data can't be searched or written. Rolling restarts are blocked until it's fixed. `GET _cluster/allocation/explain` tells why.
+        - alert: OpenSearchClusterYellow
+          expr: max by (namespace, cluster) (opensearch_cluster_status) == 1
+          # Rolling restarts and node drains make clusters yellow for a few minutes per node
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenSearch cluster {{ $labels.namespace }}/{{ $labels.cluster }} has been yellow for 30 minutes
+            description: Some replica shards are unassigned, so a node failure could make data unavailable. Node drains are blocked until the cluster is green. `GET _cluster/allocation/explain` tells why.
+        - alert: OpenSearchDiskSpaceLow
+          expr: 1 - opensearch_fs_path_available_bytes / opensearch_fs_path_total_bytes > 0.80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} has used {{ $value | humanizePercentage }} of its disk
+            description: At 85% OpenSearch stops allocating replica shards to the node, at 90% it moves shards away from it, and at 95% it makes its indices read-only.
+        - alert: OpenSearchDiskSpaceCritical
+          expr: 1 - opensearch_fs_path_available_bytes / opensearch_fs_path_total_bytes > 0.90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} has used {{ $value | humanizePercentage }} of its disk
+            description: OpenSearch moves shards away from the node, and makes its indices read-only at 95%. Free up space or add nodes.
+        - alert: OpenSearchJvmHeapHigh
+          expr: opensearch_jvm_mem_heap_used_percent > 90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} has used over 90% of its JVM heap for 15 minutes
+            description: Sustained heap pressure leads to long garbage collection pauses and tripped circuit breakers. Consider more memory (the heap is half of the memory limit) or more nodes.
+        - alert: OpenSearchCircuitBreakerTripped
+          expr: increase(opensearch_circuitbreaker_tripped_count[10m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: The {{ $labels.name }} circuit breaker of OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} tripped
+            description: Requests were rejected to protect the node from running out of memory.
+        - alert: OpenSearchThreadPoolRejections
+          expr: increase(opensearch_threadpool_threads_count{type="rejected", name=~"search|write|get"}[10m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: OpenSearch node {{ $labels.namespace }}/{{ $labels.pod }} rejected {{ $labels.name }} requests
+            description: The {{ $labels.name }} thread pool's queue was full, so requests were rejected. The cluster may need more capacity.

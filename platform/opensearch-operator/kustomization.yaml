@@ -6,15 +6,7 @@ resources:
   - github.com/reclaim-the-stack/opensearch-operator/deploy?ref=v0.16.0
   - ./opensearch-servicemonitor.yaml
 
-configMapGenerator:
-  - name: opensearch-dashboards
-    namespace: monitoring
-    options:
-      annotations:
-        argocd.argoproj.io/sync-options: Replace=true
-      labels:
-        grafana_dashboard: "1"
-    files:
-      - dashboards/opensearch.json
-generatorOptions:
-  disableNameSuffixHash: true
+# Uncomment to add a Grafana dashboard and Prometheus alerts for OpenSearch clusters
+# components:
+#   - ./grafana-dashboard
+#   - ./alerts

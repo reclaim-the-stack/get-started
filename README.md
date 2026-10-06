@@ -154,16 +154,24 @@ For events you need "just the `push` event".
 
 The [OpenSearch operator](https://reclaim-the-stack.com/docs/opensearch-operator/introduction) is disabled by default. An OpenSearch cluster needs at least 3 database nodes with 4Gi of memory to spare each, since every OpenSearch node runs on its own Kubernetes node. The Hetzner cluster from `hetzner-k3s_cluster_config.yaml` has enough, the local Docker cluster from this README doesn't.
 
-Enable the `opensearch-operator` component of the stack:
+Enable the `opensearch-operator` component of the stack, and the `k generate` template for OpenSearch clusters:
 
 ```
 mv platform-applications/disabled/opensearch-operator.yaml platform-applications/
-git add platform-applications
+mv generators/resources/disabled/opensearch.yaml generators/resources/
+```
+
+To also get a Grafana dashboard and Prometheus alerts for your OpenSearch clusters, uncomment the `components` in `platform/opensearch-operator/kustomization.yaml`. The alerts only notify anyone once Alertmanager is enabled in `platform/kube-prometheus-stack/kustomization.yaml`, until then they show in Prometheus.
+
+Commit and push the changes:
+
+```
+git add generators platform platform-applications
 git commit -m "Enable the OpenSearch operator"
 git push
 ```
 
-After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus and an OpenSearch dashboard for Grafana. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
+After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
 
 You can now add OpenSearch clusters to your applications with [k](https://github.com/reclaim-the-stack/k):
 
