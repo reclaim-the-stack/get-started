@@ -150,6 +150,29 @@ The URL structure of the webhook is: `https://argocd.<your-domain.com>/api/webho
 The content type should be `application/json`
 For events you need "just the `push` event".
 
+### OpenSearch (optional)
+
+The [OpenSearch operator](https://reclaim-the-stack.com/docs/opensearch-operator/introduction) is disabled by default. An OpenSearch cluster needs at least 3 database nodes with 4Gi of memory to spare each, since every OpenSearch node runs on its own Kubernetes node. The Hetzner cluster from `hetzner-k3s_cluster_config.yaml` has enough, the local Docker cluster from this README doesn't.
+
+Enable the `opensearch-operator` component of the stack:
+
+```
+mv platform-applications/disabled/opensearch-operator.yaml platform-applications/
+git add platform-applications
+git commit -m "Enable the OpenSearch operator"
+git push
+```
+
+After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus and an OpenSearch dashboard for Grafana. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
+
+You can now add OpenSearch clusters to your applications with [k](https://github.com/reclaim-the-stack/k):
+
+```
+k generate resource <application-name> opensearch
+```
+
+See the [OpenSearch operator documentation](https://reclaim-the-stack.com/docs/opensearch-operator/usage) for connecting to clusters, snapshots and more.
+
 ### Tear-down
 
 Wipe the local cluster and related config and the cloudflared tunnel:

@@ -1,0 +1,28 @@
+# Scrapes all OpenSearch clusters. Lives in the operator's namespace to use the metrics credentials the operator
+# generates there (opensearch-metrics-basic-auth), which are shared by all clusters.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opensearch
+  namespace: opensearch-operator
+spec:
+  namespaceSelector:
+    any: true
+  # Only matches the headless service of each cluster, so every pod is scraped once
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opensearch-operator
+      app.kubernetes.io/name: opensearch
+  endpoints:
+    - port: http
+      scheme: http
+      path: /_prometheus/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      basicAuth:
+        username:
+          name: opensearch-metrics-basic-auth
+          key: username
+        password:
+          name: opensearch-metrics-basic-auth
+          key: password
