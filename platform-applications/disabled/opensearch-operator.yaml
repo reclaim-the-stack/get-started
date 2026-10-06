@@ -1,0 +1,21 @@
+# Enable this when you want to run OpenSearch clusters, see the README
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opensearch-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: platform
+  source:
+    path: platform/opensearch-operator
+    repoURL: https://github.com/<your-github-user>/<your-repo-name>.git
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
+    syncOptions:
+      - ServerSideApply=true

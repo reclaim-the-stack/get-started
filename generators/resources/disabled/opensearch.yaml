@@ -1,0 +1,55 @@
+# Creates an OpenSearch cluster with an accompanying Dashboards instance.
+# Requires the opensearch-operator platform component, see the README.
+#
+# Example values.yaml:
+# resources:
+#   %{camelName}:
+#     replicas: 3 # Note: minimum of 3 replicas, each on its own database node
+#     memory: 4Gi # Note: minimum of 4Gi
+#     cpu: 1
+#     disk: 10Gi
+# env:
+#   - { name: OPENSEARCH_URL, valueFrom: { secretKeyRef: { name: opensearch-%{application}%{suffix}-credentials, key: admin_uri } } }
+
+apiVersion: opensearch.reclaim-the-stack.com/v1alpha1
+kind: OpenSearch
+metadata:
+  name: {{ .Chart.Name }}%{suffix}
+spec:
+  image: ghcr.io/reclaim-the-stack/opensearch:3.8.0
+  replicas: {{ .Values.resources.%{camelName}.replicas }}
+  diskSize: {{ .Values.resources.%{camelName}.disk }}
+  # Add arbitrary OpenSearch settings to opensearch.yml
+  # config:
+  #   reindex.remote.allowlist: "remote-cluster:9200"
+  nodeSelector:
+    node-role.kubernetes.io/database: ""
+  tolerations:
+    - key: role
+      value: database
+      effect: NoSchedule
+  resources:
+    requests:
+      memory: {{ .Values.resources.%{camelName}.memory }}
+      cpu: {{ .Values.resources.%{camelName}.cpu | quote }}
+    limits:
+      memory: {{ .Values.resources.%{camelName}.memory }}
+  # Add an S3 credentials secret and uncomment to take daily snapshots, see
+  # https://reclaim-the-stack.com/docs/opensearch-operator/usage#snapshots
+  # snapshotRepositories:
+  #   - name: backups
+  #     type: s3
+  #     bucket: <bucket>
+  #     base_path: opensearch/{{ .Chart.Name }}%{suffix}
+  #     endpoint: <s3-endpoint>
+  #     region: <region>
+  #     accessKeyId:
+  #       name: opensearch-s3-credentials
+  #       key: AWS_ACCESS_KEY_ID
+  #     secretAccessKey:
+  #       name: opensearch-s3-credentials
+  #       key: AWS_SECRET_ACCESS_KEY
+  #     policies:
+  #       - name: daily
+  #         schedule: 0 0 * * * # every day at midnight UTC
+  #         max_age: 30d

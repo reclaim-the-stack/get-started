@@ -61,3 +61,21 @@ data:
     jsonPointers:
       - /spec/names/shortNames
       - /spec/preserveUnknownFields
+
+  # Health of OpenSearch clusters from their Ready condition, see
+  # https://reclaim-the-stack.com/docs/opensearch-operator/installation#argo-cd-health-check
+  resource.customizations.health.opensearch.reclaim-the-stack.com_OpenSearch: |
+    hs = { status = "Progressing", message = "Waiting for the operator" }
+    if obj.status ~= nil and obj.status.conditions ~= nil then
+      for _, condition in ipairs(obj.status.conditions) do
+        if condition.type == "Ready" and condition.observedGeneration == obj.metadata.generation then
+          hs.message = condition.message
+          if condition.status == "True" then
+            hs.status = "Healthy"
+          elseif condition.reason ~= "Progressing" then
+            hs.status = "Degraded"
+          end
+        end
+      end
+    end
+    return hs

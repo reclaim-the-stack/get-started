@@ -150,6 +150,37 @@ The URL structure of the webhook is: `https://argocd.<your-domain.com>/api/webho
 The content type should be `application/json`
 For events you need "just the `push` event".
 
+### OpenSearch (optional)
+
+The [OpenSearch operator](https://reclaim-the-stack.com/docs/opensearch-operator/introduction) is disabled by default. An OpenSearch cluster needs at least 3 nodes labeled `node-role.kubernetes.io/database` with 4Gi of memory to spare each, since every OpenSearch node runs on its own Kubernetes node.
+
+Enable the `opensearch-operator` component of the stack, and the `k generate` template for OpenSearch clusters:
+
+```
+mv platform-applications/disabled/opensearch-operator.yaml platform-applications/
+mv generators/resources/disabled/opensearch.yaml generators/resources/
+```
+
+To also get Prometheus alerts for your OpenSearch clusters, uncomment the `components` in `platform/opensearch-operator/kustomization.yaml`. The alerts only notify anyone once Alertmanager is enabled in `platform/kube-prometheus-stack/kustomization.yaml`, until then they show in Prometheus.
+
+Commit and push the changes:
+
+```
+git add generators platform platform-applications
+git commit -m "Enable the OpenSearch operator"
+git push
+```
+
+After refreshing the `platform` application in ArgoCD, the operator gets installed along with a ServiceMonitor for Prometheus and an OpenSearch dashboard for Grafana. ArgoCD already knows how to judge the health of OpenSearch clusters, see `platform/argocd/config.yaml`.
+
+You can now add OpenSearch clusters to your applications with [k](https://github.com/reclaim-the-stack/k):
+
+```
+k generate resource <application-name> opensearch
+```
+
+See the [OpenSearch operator documentation](https://reclaim-the-stack.com/docs/opensearch-operator/usage) for connecting to clusters, snapshots and more.
+
 ### Tear-down
 
 Wipe the local cluster and related config and the cloudflared tunnel:
