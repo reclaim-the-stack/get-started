@@ -17,3 +17,7 @@ helmCharts:
           sidecarLabelValue: "1"
           forceString: true
         podMonitorEnabled: true
+
+# Uncomment to add Prometheus alerts for Postgres clusters
+# components:
+#   - ./alerts

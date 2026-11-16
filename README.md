@@ -181,6 +181,10 @@ k generate resource <application-name> opensearch
 
 See the [OpenSearch operator documentation](https://reclaim-the-stack.com/docs/opensearch-operator/usage) for connecting to clusters, snapshots and more.
 
+### Postgres alerts (optional)
+
+To get Prometheus alerts for your Postgres clusters, uncomment the `components` in `platform/cloudnativepg/kustomization.yaml`. Like the OpenSearch alerts, they only notify anyone once Alertmanager is enabled in `platform/kube-prometheus-stack/kustomization.yaml`, until then they show in Prometheus.
+
 ### Tear-down
 
 Wipe the local cluster and related config and the cloudflared tunnel:
