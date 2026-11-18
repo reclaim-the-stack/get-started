@@ -52,9 +52,12 @@ that become obsolete (eg. fixed in the repo) to keep this file lean.
 ## Upgrade playbook notes
 
 - **CNPG operator upgrades roll every postgres instance** (replicas first,
-  then the primary in-place with a brief write-unavailability window, ~4 min
-  total). Declarative PG major upgrades (change imageName) run an offline
-  pg_upgrade — watch `.status.phase` on the Cluster for the timeline.
+  then the primary, with a brief write-unavailability window). Clusters from
+  the generator set `primaryUpdateMethod: switchover`, so the primary moves
+  to an updated replica; without it, or with a single instance, the primary
+  restarts in place (~4 min total, measured before the generator default).
+  Declarative PG major upgrades (change imageName) run an offline pg_upgrade
+  — watch `.status.phase` on the Cluster for the timeline.
 - **linkerd ships via the edge channel only** (OSS stable ended at 2.14); use
   releases marked "recommended" in the GitHub release notes. Upgrade order:
   control plane, then viz, then rollout-restart all meshed workloads. Meshed
