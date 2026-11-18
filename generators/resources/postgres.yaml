@@ -31,6 +31,7 @@ metadata:
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4
   primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover # Rolling updates promote an updated replica instead of restarting the primary in place
   enableSuperuserAccess: false
   instances: {{ .Values.resources.%{camelName}.replicas }}
   resources:
