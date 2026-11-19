@@ -1,0 +1,89 @@
+# Alerts for all Postgres clusters, based on the metrics their PodMonitors scrape. Alertmanager has to be enabled
+# (see platform/kube-prometheus-stack/kustomization.yaml) for them to notify anyone, until then they show in Prometheus.
+#
+# Started from the CloudNativePG sample alerts:
+# https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/samples/monitoring/prometheusrule.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnativepg
+  namespace: cnpg-system
+spec:
+  groups:
+    - name: cloudnativepg
+      rules:
+        - alert: LongRunningTransaction
+          expr: cnpg_backends_max_tx_duration_seconds > 1200
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: A transaction on {{ $labels.namespace }}/{{ $labels.pod }} has been open for over 20 minutes
+            description: Long transactions hold on to locks and keep vacuum from cleaning up. `pg_stat_activity` shows which one it is.
+        # cnpg_backends_waiting_total counts blocked/blocking lock pairs, about N squared for N backends queued on one
+        # lock, so its square root approximates the queue length. Averaged because the queue length swings between
+        # scrapes.
+        - alert: BackendsWaiting
+          expr: avg_over_time(sqrt(cnpg_backends_waiting_total)[10m:30s]) > 10
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Backends on {{ $labels.namespace }}/{{ $labels.pod }} are queueing on locks
+            description: About {{ $value | printf "%.0f" }} backends have been queued behind a lock on average over the last 10 minutes.
+        # Peak over 6 hours instead of a "for" duration: connection pools fill in bursts that last a few minutes, and
+        # the window spans the quiet hours at night so the alert does not resolve and fire again every day.
+        - alert: PGHighConnections
+          expr: |-
+            max_over_time((
+              sum by (namespace, pod) (cnpg_backends_total)
+              / max by (namespace, pod) (cnpg_pg_settings_setting{name="max_connections"})
+            )[6h:1m]) * 100 > 80
+          labels:
+            severity: warning
+          annotations:
+            summary: Postgres {{ $labels.namespace }}/{{ $labels.pod }} is close to max_connections
+            description: Connections peaked at {{ $value | printf "%.0f" }}% of max_connections in the last 6 hours. New connections are refused once the limit is reached.
+        - alert: PGDatabase
+          expr: cnpg_pg_database_xid_age > 300000000
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Database {{ $labels.datname }} on {{ $labels.namespace }}/{{ $labels.pod }} is over 300,000,000 transactions from its frozen XID
+            description: Vacuum is not keeping up with freezing old rows, which has to happen before the transaction ID counter wraps around.
+        - alert: PGReplication
+          expr: cnpg_pg_replication_lag > 300
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Standby {{ $labels.namespace }}/{{ $labels.pod }} is lagging over 5 minutes behind the primary
+            description: A failover to this standby would lose the transactions it has not replayed yet.
+        # Only primaries archive WAL, an old failure on a replica would never clear
+        - alert: LastFailedArchiveTime
+          expr: |-
+            (cnpg_pg_stat_archiver_last_failed_time - cnpg_pg_stat_archiver_last_archived_time) > 1
+            and on(namespace, pod) cnpg_pg_replication_in_recovery == 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: WAL archiving is failing on {{ $labels.namespace }}/{{ $labels.pod }}
+            description: The last attempt to archive a WAL file failed and none has succeeded since. Backups can't be restored past the last archived file, and unarchived WAL accumulates on the volume.
+        - alert: DatabaseDeadlockConflicts
+          expr: increase(cnpg_pg_stat_database_deadlocks[1m]) > 5
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Over 5 deadlocks in database {{ $labels.datname }} on {{ $labels.namespace }}/{{ $labels.pod }} in the last minute
+            description: Postgres resolves a deadlock by aborting one of the transactions. Its log tells which queries were involved.
+        - alert: ReplicaFailingReplication
+          expr: cnpg_pg_replication_in_recovery > cnpg_pg_replication_is_wal_receiver_up
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Replica {{ $labels.namespace }}/{{ $labels.pod }} is failing to replicate
+            description: The instance is a replica but its WAL receiver is not running, so it is not receiving changes from the primary.
